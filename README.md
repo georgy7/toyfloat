@@ -17,5 +17,3 @@ It has:
 * exact representation of integers up to 256
 * no infinities
 * no NaN
-
-<img src="images/density_edited.png" alt="Logo" width="400" height="342">
