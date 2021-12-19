@@ -24,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	var counts [510]int
+	var counts [1020]int
 
 	for head := 0x00; head <= 0xFF; head++ {
 		for tail := 0x00; tail <= 0x0F; tail++ {
@@ -36,21 +36,16 @@ func main() {
 		}
 	}
 
-	for i := 0; i < len(counts); i++ {
-		// 1 pixel = 2 units.
-		// Values per integer = values per pixel / 2.
-		counts[i] = int(math.Round(float64(counts[i]) * 0.5))
-	}
-
 	lm := 50
 	rm := 5
 	tm := 20
 	bm := 40
 
-	ySize := len(counts) / 4 * 3
+	xSize := len(counts) / 2
+	ySize := xSize / 4 * 3
 
 	img := image.NewRGBA(image.Rect(0, 0,
-		len(counts)+lm+rm,
+		xSize+lm+rm,
 		ySize+tm+bm))
 
 	draw.Draw(img, img.Rect, image.White, image.Point{}, draw.Src)
@@ -63,8 +58,10 @@ func main() {
 
 	maxCountLog10 := -10000.0
 	minCountLog10 := 10000.0
-	for _, c := range counts {
-		countLog10 := math.Log10(float64(c))
+
+	for i := 0; i < len(counts); i += 2 {
+		cAverage := (float64(counts[i]) + float64(counts[i+1])) / 2
+		countLog10 := math.Log10(cAverage)
 
 		if countLog10 > maxCountLog10 {
 			maxCountLog10 = countLog10
@@ -77,25 +74,28 @@ func main() {
 
 	countLogDiff := maxCountLog10 - minCountLog10
 
-	uniqueCounts := make(map[int]bool)
+	uniqueCounts := make(map[float64]bool)
 
-	for i, count := range counts {
+	for i := 0; i < len(counts); i += 2 {
+		count := (float64(counts[i]) + float64(counts[i+1])) / 2
 		countLog10 := math.Log10(float64(count))
 
 		if !uniqueCounts[count] {
 			uniqueCounts[count] = true
-			fmt.Printf("count: %d, log10: %.2f\n", count, countLog10)
+			fmt.Printf("count: %.1f, log10: %.2f\n", count, countLog10)
 		}
 
 		v := (countLog10 - minCountLog10) / countLogDiff
 
 		y := math.Round(v*maxDensityY + (1.0-v)*minDensityY)
 		intY := int(y)
-		img.Set(lm+i, intY, paint)
+		x := lm + i/2
+		img.Set(x, intY, paint)
 
-		if intY < int(minDensityY) {
-			for y2 := intY + 1; y2 < int(minDensityY); y2++ {
-				img.Set(lm+i, y2, grey)
+		bGrey := bm / 3
+		if intY < int(minDensityY)+bGrey {
+			for y2 := intY + 1; y2 < int(minDensityY)+bGrey; y2++ {
+				img.Set(x, y2, grey)
 			}
 		}
 	}
@@ -114,6 +114,6 @@ func main() {
 }
 
 func toIndex(value float64) int {
-	u := (value + 510) / 2
+	u := value + 510
 	return int(u)
 }
