@@ -1,0 +1,50 @@
+\documentclass[12pt]{standalone}
+
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+    \begin{minipage}{9cm}
+
+        \begin{tabular}{|c|}
+        \hline
+        \\
+
+            \vbox{\begin{equation*}
+            f(m, x) = sign \cdot ((1 + \frac{m}{128}) \cdot 2^{x} - a) \cdot b
+            \end{equation*}}
+
+        \\
+
+            \vbox{\begin{equation*}
+            \{ m \in \mathbb{Z} \mid 0 \leq m \leq 127 \}
+            \end{equation*}}
+
+        \\
+
+            \vbox{\begin{equation*}
+            \{ x \in \mathbb{Z} \mid -8 \leq x \leq 7 \}
+            \end{equation*}}
+
+        \\
+
+            \vbox{\begin{equation*}
+            a = (1 + \frac{0}{128}) \cdot 2^{-8}
+            \quad \quad
+            a = 2^{-8}
+            \end{equation*}}
+
+        \\
+
+            \vbox{\begin{equation*}
+            b = \frac{1}{1 - a}
+            \end{equation*}}
+
+        \\
+        \hline
+        \end{tabular}
+
+    \end{minipage}
+\end{document}
