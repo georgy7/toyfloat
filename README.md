@@ -4,8 +4,8 @@
 
 Expected applications:
 
-* File Format Design
-* Storing colors (pixels, voxels)
+* File format design
+* Lossy compression
 
 It has:
 
@@ -14,7 +14,6 @@ It has:
 * 1 sign bit
 * (-255.9961, 255.9961) values range
 * exact 0, 1, -1
-* no infinities
 * no NaN
 
 ![Formula](images/formula.png)

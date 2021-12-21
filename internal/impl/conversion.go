@@ -3,13 +3,13 @@ package impl
 import "math"
 
 const exponentOffset = 8
+const a = 1.0 / 256.0
+
+const reversedB = 1.0 - a
+const b = 1.0 / reversedB
 
 const minExponent = -exponentOffset
 const maxExponent = minExponent + 15
-
-const a = 1.0 / 256.0
-const reversedB = 1.0 - a
-const b = 1.0 / reversedB
 
 const minus uint16 = 0b1000_0000
 const binaryMaxSignificand uint16 = 0b0111_1111

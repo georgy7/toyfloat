@@ -24,10 +24,10 @@ func main() {
 		value := math.Pow(10, p)
 		v2 := toyfloat.Decode(toyfloat.Encode(value))
 
-		if (v2 > 0) || (p > 0) {
+		if v2 > 0 {
 			precision := math.Abs(value - v2)
 
-			_, err := fmt.Fprintf(output, "%.12f\t%.12f\n", value, precision)
+			_, err := fmt.Fprintf(output, "%E\t%E\n", value, precision)
 			if err != nil {
 				panic(err)
 			}
