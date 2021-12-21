@@ -5,9 +5,13 @@ import (
 )
 
 func Encode(v float64) uint16 {
-	return impl.Encode(v)
+	const minus uint16 = 0b1000_0000
+	const mMask uint16 = 0b0111_1111
+	return impl.Encode(v, 7, 8, minus, mMask)
 }
 
 func Decode(x uint16) float64 {
-	return impl.Decode(x)
+	const minus uint16 = 0b1000_0000
+	const mMask uint16 = 0b0111_1111
+	return impl.Decode(x, 7, 8, minus, mMask)
 }

@@ -11,26 +11,38 @@ const b = 1.0 / reversedB
 const minExponent = -exponentOffset
 const maxExponent = minExponent + 15
 
-const minus uint16 = 0b1000_0000
-const binaryMaxSignificand uint16 = 0b0111_1111
-const binaryMaxExponent uint16 = 0b1111_0000_0000
-const binaryMaxValue = binaryMaxExponent | binaryMaxSignificand
+const xMask = 0b1111
 
-func Encode(v float64) uint16 {
-	if math.IsNaN(v) {
+func Encode(value float64, mSize int, xShift int,
+	minus uint16, mMask uint16) uint16 {
+
+	if math.IsNaN(value) {
 		return 0x0
-	} else if v >= 0 {
-		return encode(v*reversedB + a)
+	}
+
+	binaryMaxValue := (xMask << xShift) | mMask
+
+	if value >= 0 {
+		return encode(value*reversedB+a, mSize, binaryMaxValue)
 	} else {
-		return minus | encode(-v*reversedB+a)
+		return minus | encode(-value*reversedB+a, mSize, binaryMaxValue)
 	}
 }
 
-func Decode(x uint16) float64 {
-	return (decode(x) - a) * b * sign(x)
+func Decode(tf uint16, mSize int, xShift int,
+	minus uint16, mMask uint16) float64 {
+
+	x := int((tf>>xShift)&xMask) - exponentOffset
+
+	significand := 1.0 + float64(tf&mMask)/powerOfTwo(mSize)
+	characteristic := powerOfTwo(x)
+
+	r := significand * characteristic
+
+	return (r - a) * b * sign(tf, minus)
 }
 
-func sign(x uint16) float64 {
+func sign(x uint16, minus uint16) float64 {
 	if minus == x&minus {
 		return -1
 	} else {
@@ -38,12 +50,10 @@ func sign(x uint16) float64 {
 	}
 }
 
-func encode(inner float64) uint16 {
-	const internalMaximum float64 = 255.0
+func encode(inner float64, mSize int, maxValue uint16) uint16 {
+	internalMaximum := powerOfTwo(mSize+1) - 1
 	if inner >= internalMaximum {
-		return binaryMaxValue
-	} else if inner <= (-internalMaximum) {
-		return binaryMaxValue | minus
+		return maxValue
 	}
 
 	x := getExponent(inner)
@@ -51,25 +61,9 @@ func encode(inner float64) uint16 {
 
 	characteristic := powerOfTwo(x)
 	normalized := inner / characteristic
+	binarySignificand := uint16((normalized - 1.0) * powerOfTwo(mSize))
 
-	if normalized >= 0 {
-		return toBinarySignificand(normalized) | binaryExponent
-	} else {
-		return minus | toBinarySignificand(-normalized) | binaryExponent
-	}
-}
-
-func toBinarySignificand(normalizedSignificand float64) uint16 {
-	return uint16((normalizedSignificand - 1.0) * 128.0)
-}
-
-func decode(tf uint16) float64 {
-	x := int((tf&binaryMaxExponent)>>8) - exponentOffset
-
-	significand := 1.0 + float64(tf&binaryMaxSignificand)/128.0
-	characteristic := powerOfTwo(x)
-
-	return significand * characteristic
+	return binarySignificand | binaryExponent
 }
 
 func getExponent(v float64) int {
