@@ -197,3 +197,23 @@ func TestIgnoringMostSignificantByte(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkFloat64Increment(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		one := 1.0
+		counter := 0.0
+		for x := 0; x < 100000; x++ {
+			counter += one
+		}
+	}
+}
+
+func BenchmarkDecodeEncodeIncrement(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		one := 1.0
+		counter := Encode(0.0)
+		for x := 0; x < 100000; x++ {
+			counter = Encode(Decode(counter) + one)
+		}
+	}
+}

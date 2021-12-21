@@ -49,7 +49,7 @@ func encode(inner float64) uint16 {
 	x := getExponent(inner)
 	binaryExponent := uint16(x+exponentOffset) << 8
 
-	characteristic := math.Pow(2, float64(x))
+	characteristic := powerOfTwo(x)
 	normalized := inner / characteristic
 
 	if normalized >= 0 {
@@ -64,10 +64,10 @@ func toBinarySignificand(normalizedSignificand float64) uint16 {
 }
 
 func decode(tf uint16) float64 {
-	x := float64((tf&binaryMaxExponent)>>8) - exponentOffset
+	x := int((tf&binaryMaxExponent)>>8) - exponentOffset
 
 	significand := 1.0 + float64(tf&binaryMaxSignificand)/128.0
-	characteristic := math.Pow(2, x)
+	characteristic := powerOfTwo(x)
 
 	return significand * characteristic
 }
@@ -76,10 +76,18 @@ func getExponent(v float64) int {
 	modulus := math.Abs(v)
 
 	for exp := maxExponent; exp > minExponent; exp-- {
-		if math.Pow(2, float64(exp)) <= modulus {
+		if powerOfTwo(exp) <= modulus {
 			return exp
 		}
 	}
 
 	return minExponent
+}
+
+func powerOfTwo(x int) float64 {
+	if x < 0 {
+		return 1.0 / float64(int(1)<<-x)
+	} else {
+		return float64(int(1) << x)
+	}
 }
