@@ -6,5 +6,4 @@ bin/
 images/*.dvi
 images/*.aux
 images/*.log
-
-images/density.png
+images/precision.tsv

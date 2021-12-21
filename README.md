@@ -20,3 +20,5 @@ It has:
 ![Formula](images/formula.png)
 
 ![Representation in memory](images/bits.png)
+
+![Precision graph](images/precision.png)
