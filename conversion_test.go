@@ -684,3 +684,41 @@ func Test14IgnoringMostSignificantByte(t *testing.T) {
 		}
 	}
 }
+
+// ------------------------
+
+func TestMinusBitPosition(t *testing.T) {
+	tf := Encode(42)
+	t.Logf("Encoded: 0b%b", tf)
+
+	a := Decode(tf)
+	b := -Decode(tf | 0b1000_0000)
+
+	if a != b {
+		t.Fatalf("%f != %f", a, b)
+	}
+}
+
+func Test13MinusBitPosition(t *testing.T) {
+	tf := Encode13(42)
+	t.Logf("Encoded: 0b%b", tf)
+
+	a := Decode13(tf)
+	b := -Decode13(tf | 0b1_0000_0000_0000)
+
+	if a != b {
+		t.Fatalf("%f != %f", a, b)
+	}
+}
+
+func Test14MinusBitPosition(t *testing.T) {
+	tf := Encode14(42)
+	t.Logf("Encoded: 0b%b", tf)
+
+	a := Decode14(tf)
+	b := -Decode14(tf | 0b10_0000_0000)
+
+	if a != b {
+		t.Fatalf("%f != %f", a, b)
+	}
+}
