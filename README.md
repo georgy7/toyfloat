@@ -4,8 +4,8 @@
 
 Expected applications:
 
-* File format design
-* Lossy compression
+* file format design
+* lossy compression
 
 It has:
 
@@ -18,6 +18,20 @@ It has:
 
 ![Formula](images/formula.png)
 
-![Representation in memory](images/bits.png)
+![Toyfloat in uint16: 4 empty bits, exponent, sign and mantissa.](images/bits.png)
 
 ![Precision graph](images/precision.png)
+
+## Other options
+
+Unsigned 12-bit format (utoyfloat)
+
+`_ _ _ _ x x x x` `m m m m m m m m`
+
+Signed 13-bit (toyfloat13)
+
+`_ _ _ s x x x x` `m m m m m m m m`
+
+Signed 14-bit (toyfloat14)
+
+`_ _ x x x x s m` `m m m m m m m m`

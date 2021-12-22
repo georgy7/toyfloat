@@ -10,6 +10,7 @@ const b = 1.0 / reversedB
 
 const minExponent = -exponentOffset
 const maxExponent = minExponent + 15
+const twoPowerMaxExponent = 128.0
 
 const xMask = 0b1111
 
@@ -23,9 +24,11 @@ func Encode(value float64, mSize int, xShift int,
 	binaryMaxValue := (xMask << xShift) | mMask
 
 	if value >= 0 {
-		return encode(value*reversedB+a, mSize, binaryMaxValue)
+		return encode(value*reversedB+a, mSize, xShift, binaryMaxValue)
+	} else if 0b0 == minus {
+		return 0x0
 	} else {
-		return minus | encode(-value*reversedB+a, mSize, binaryMaxValue)
+		return minus | encode(-value*reversedB+a, mSize, xShift, binaryMaxValue)
 	}
 }
 
@@ -43,25 +46,26 @@ func Decode(tf uint16, mSize int, xShift int,
 }
 
 func sign(x uint16, minus uint16) float64 {
-	if minus == x&minus {
-		return -1
-	} else {
+	if 0b0 == x&minus {
 		return 1
+	} else {
+		return -1
 	}
 }
 
-func encode(inner float64, mSize int, maxValue uint16) uint16 {
-	internalMaximum := powerOfTwo(mSize+1) - 1
+func encode(inner float64, mSize int, xShift int, maxValue uint16) uint16 {
+	twoPowerM := powerOfTwo(mSize)
+	internalMaximum := (1 + (twoPowerM-1)/twoPowerM) * twoPowerMaxExponent
 	if inner >= internalMaximum {
 		return maxValue
 	}
 
 	x := getExponent(inner)
-	binaryExponent := uint16(x+exponentOffset) << 8
+	binaryExponent := uint16(x+exponentOffset) << xShift
 
 	characteristic := powerOfTwo(x)
 	normalized := inner / characteristic
-	binarySignificand := uint16((normalized - 1.0) * powerOfTwo(mSize))
+	binarySignificand := uint16((normalized - 1.0) * twoPowerM)
 
 	return binarySignificand | binaryExponent
 }
