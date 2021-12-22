@@ -24,14 +24,8 @@ It has:
 
 ## Other options
 
-Unsigned 12-bit format
-
-`_ _ _ _ x x x x` `m m m m m m m m`
-
-Signed 13-bit
-
-`_ _ _ s x x x x` `m m m m m m m m`
-
-Signed 14-bit
-
-`_ _ x x x x s m` `m m m m m m m m`
+```
+____ xxxx mmmm mmmm (unsigned)
+___s xxxx mmmm mmmm (13-bit)
+__xx xxsm mmmm mmmm (14-bit)
+```

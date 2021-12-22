@@ -7,8 +7,8 @@ import (
 	"os"
 )
 
-func main() {
-	output, err := os.Create("precision.tsv")
+func generate(fn string, encodeDecode func(x float64) float64) {
+	output, err := os.Create(fn)
 	if err != nil {
 		panic(err)
 	}
@@ -22,7 +22,7 @@ func main() {
 
 	for p := float64(-12); p < 6; p += 0.01 {
 		value := math.Pow(10, p)
-		v2 := toyfloat.Decode(toyfloat.Encode(value))
+		v2 := encodeDecode(value)
 
 		if v2 > 0 {
 			precision := math.Abs(value - v2)
@@ -33,4 +33,22 @@ func main() {
 			}
 		}
 	}
+}
+
+func main() {
+	generate("precision.tsv", func(x float64) float64 {
+		return toyfloat.Decode(toyfloat.Encode(x))
+	})
+
+	generate("precision_unsigned.tsv", func(x float64) float64 {
+		return toyfloat.DecodeUnsigned(toyfloat.EncodeUnsigned(x))
+	})
+
+	generate("precision13.tsv", func(x float64) float64 {
+		return toyfloat.Decode13(toyfloat.Encode13(x))
+	})
+
+	generate("precision14.tsv", func(x float64) float64 {
+		return toyfloat.Decode14(toyfloat.Encode14(x))
+	})
 }

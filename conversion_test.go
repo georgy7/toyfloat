@@ -177,7 +177,7 @@ func TestPrecision(t *testing.T) {
 	}
 }
 
-func TestIgnoringMostSignificantByte(t *testing.T) {
+func TestIgnoringMostSignificantBits(t *testing.T) {
 	for f := -255.0; f <= 255.0; f += 0.01 {
 		toy := Encode(f)
 		original := Decode(toy)
@@ -186,7 +186,7 @@ func TestIgnoringMostSignificantByte(t *testing.T) {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
 		}
 
-		for m := 0x1; m < 0xF; m++ {
+		for m := 0x1; m <= 0xF; m++ {
 			modification := uint16(m) << 12
 			toyModified := toy | modification
 			modified := Decode(toyModified)
@@ -494,7 +494,7 @@ func Test13NaNConvertedToZero(t *testing.T) {
 	}
 }
 
-func Test13IgnoringMostSignificantByte(t *testing.T) {
+func Test13IgnoringMostSignificantBits(t *testing.T) {
 	for f := -255.0; f <= 255.0; f += 0.01 {
 		toy := Encode13(f)
 		original := Decode13(toy)
@@ -503,7 +503,7 @@ func Test13IgnoringMostSignificantByte(t *testing.T) {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
 		}
 
-		for m := 0x1; m < 0x7; m++ {
+		for m := 0b1; m <= 0b111; m++ {
 			modification := uint16(m) << 13
 			toyModified := toy | modification
 			modified := Decode13(toyModified)
@@ -657,7 +657,7 @@ func Test14NaNConvertedToZero(t *testing.T) {
 	}
 }
 
-func Test14IgnoringMostSignificantByte(t *testing.T) {
+func Test14IgnoringMostSignificantBits(t *testing.T) {
 	for f := -255.0; f <= 255.0; f += 0.01 {
 		toy := Encode14(f)
 		original := Decode14(toy)
@@ -666,7 +666,7 @@ func Test14IgnoringMostSignificantByte(t *testing.T) {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
 		}
 
-		for m := 0x1; m < 0x3; m++ {
+		for m := 0b01; m <= 0b11; m++ {
 			modification := uint16(m) << 14
 			toyModified := toy | modification
 			modified := Decode14(toyModified)
