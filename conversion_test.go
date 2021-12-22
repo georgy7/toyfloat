@@ -521,3 +521,166 @@ func Test13IgnoringMostSignificantByte(t *testing.T) {
 		}
 	}
 }
+
+// ------------------------
+
+func Test14Precision(t *testing.T) {
+	tests := getToyfloatPositiveSample()
+
+	for _, tt := range tests {
+		toy := Encode14(tt.number)
+		result := Decode14(toy)
+
+		diff := math.Abs(result - tt.number)
+		if diff > tt.precision*0.25 {
+			t.Fatalf("%.4f -> 0b%b, diff: %f", tt.number, toy, diff)
+		}
+	}
+
+	for _, tt := range tests {
+		negative := -tt.number
+		toy := Encode14(negative)
+		result := Decode14(toy)
+
+		diff := math.Abs(result - negative)
+		if diff > tt.precision*0.25 {
+			t.Fatalf("%.4f -> 0b%b, diff: %f", negative, toy, diff)
+		}
+	}
+}
+
+func Test14Zero(t *testing.T) {
+	tf := Encode14(0)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := Decode14(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func Test14PlusOne(t *testing.T) {
+	tf := Encode14(1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := Decode14(tf)
+
+	if result != 1 {
+		t.Fatalf("%f != 1", result)
+	}
+}
+
+func Test14MinusOne(t *testing.T) {
+	tf := Encode14(-1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := Decode14(tf)
+
+	if result != -1 {
+		t.Fatalf("%f != -1", result)
+	}
+}
+
+func Test14PositiveOverflow(t *testing.T) {
+	const expected = 256.74901960784314
+	const eps = 0.0001
+
+	for i := 0; i < 1000; i++ {
+		v := expected + float64(i)
+		tf := Encode14(v)
+
+		result := Decode14(tf)
+
+		if math.Abs(result-expected) > eps {
+			t.Logf("Encoded: 0b%b", tf)
+			t.Fatalf("%f != %f (i = %d)", result, expected, i)
+		}
+	}
+}
+
+func Test14NegativeOverflow(t *testing.T) {
+	const expected = -256.74901960784314
+	const eps = 0.0001
+
+	for i := 0; i < 1000; i++ {
+		v := expected - float64(i)
+		tf := Encode14(v)
+
+		result := Decode14(tf)
+
+		if math.Abs(result-expected) > eps {
+			t.Logf("Encoded: 0b%b", tf)
+			t.Fatalf("%f != %f (i = %d)", result, expected, i)
+		}
+	}
+}
+
+func Test14PositiveInfinity(t *testing.T) {
+	const expected = 256.74901960784314
+	const eps = 0.0001
+
+	v := math.Inf(+1)
+	tf := Encode14(v)
+
+	result := Decode14(tf)
+
+	if math.Abs(result-expected) > eps {
+		t.Logf("Encoded: 0b%b", tf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func Test14NegativeInfinity(t *testing.T) {
+	const expected = -256.74901960784314
+	const eps = 0.0001
+
+	v := math.Inf(-1)
+	tf := Encode14(v)
+
+	result := Decode14(tf)
+
+	if math.Abs(result-expected) > eps {
+		t.Logf("Encoded: 0b%b", tf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func Test14NaNConvertedToZero(t *testing.T) {
+	tf := Encode14(math.NaN())
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := Decode14(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func Test14IgnoringMostSignificantByte(t *testing.T) {
+	for f := -255.0; f <= 255.0; f += 0.01 {
+		toy := Encode14(f)
+		original := Decode14(toy)
+
+		if 0b1100_0000_0000_0000&toy != 0x0 {
+			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
+		}
+
+		for m := 0x1; m < 0x3; m++ {
+			modification := uint16(m) << 14
+			toyModified := toy | modification
+			modified := Decode14(toyModified)
+
+			if toy == toyModified {
+				t.Fatalf("This test is broken. "+
+					"Toy: 0b%b. Modification: 0b%b.",
+					toy, modification)
+			}
+
+			if modified != original {
+				t.Fatalf("%.4f != %.4f, modification: 0b%b",
+					modified, original, modification)
+			}
+		}
+	}
+}

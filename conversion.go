@@ -36,3 +36,14 @@ func Encode13(v float64) uint16 {
 func Decode13(x uint16) float64 {
 	return impl.Decode(x, 8, 8, minus13, mMask13)
 }
+
+const minus14 uint16 = 0b10_0000_0000
+const mMask14 uint16 = 0b01_1111_1111
+
+func Encode14(v float64) uint16 {
+	return impl.Encode(v, 9, 10, minus14, mMask14)
+}
+
+func Decode14(x uint16) float64 {
+	return impl.Decode(x, 9, 10, minus14, mMask14)
+}
