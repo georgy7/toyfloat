@@ -26,3 +26,52 @@ __xx xxsm mmmm mmmm (14-bit)
 ```
 
 ![Precision graph](images/comparison.png)
+
+## Usage
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/georgy7/toyfloat"
+)
+
+func main() {
+	println()
+
+	tf := toyfloat.Encode(0.345)
+	fmt.Printf("0x%X\n", tf)
+
+	f := toyfloat.Decode(tf)
+	fmt.Printf("%f\n\n", f)
+
+	tf = toyfloat.Encode13(0.345)
+	fmt.Printf("0x%X\n", tf)
+
+	f = toyfloat.Decode13(tf)
+	fmt.Printf("%f\n\n", f)
+
+	tf = toyfloat.Encode14(0.345)
+	fmt.Printf("0x%X\n", tf)
+
+	f = toyfloat.Decode14(tf)
+	fmt.Printf("%f\n\n", f)
+}
+```
+
+```shell
+go get github.com/georgy7/toyfloat
+go run example.go
+```
+
+```
+0x631
+0.343137
+
+0x663
+0.344118
+
+0x18C7
+0.344608
+```
