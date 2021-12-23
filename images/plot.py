@@ -69,9 +69,10 @@ def get_comparison_data(data_fn):
 
 def new_figure():
     figure = plt.figure()
+    axes = plt.axes()
 
     figure.patch.set_facecolor('#e6e6e6')
-    plt.axes().set_facecolor('#eeeeee')
+    axes.set_facecolor('#eeeeee')
 
     plt.xlabel('Floating Point Values')
     plt.ylabel('Floating Point Precision')
@@ -80,13 +81,13 @@ def new_figure():
     plt.yscale('log')
 
     plt.grid(True, color='#c7c7c7')
-    return figure
+    return figure, axes
 
 
 def make_image(data_fn, result_fn):
     values, precision = get_data(data_fn)
 
-    figure = new_figure()
+    figure, ax = new_figure()
     figure.set_size_inches(5, 5)
     plt.subplots_adjust(left=0.162, bottom=0.129, right=0.954, top=0.954)
 
@@ -95,16 +96,20 @@ def make_image(data_fn, result_fn):
 
 
 def make_comparison(result_fn):
-    figure = new_figure()
+    figure, ax = new_figure()
+    figure.set_size_inches(5.6, 5)
+    plt.subplots_adjust(left=0.162, bottom=0.129, right=0.954, top=0.954)
 
     values, precision = get_comparison_data('precision.tsv')
-    plt.plot(values, precision, 'o-')
+    plt.plot(values, precision, 'o-', label='default')
 
     values, precision = get_comparison_data('precision13.tsv')
-    plt.plot(values, precision, 'o-')
+    plt.plot(values, precision, 'o-', label='unsigned / 13-bit')
 
     values, precision = get_comparison_data('precision14.tsv')
-    plt.plot(values, precision, 'o-')
+    plt.plot(values, precision, 'o-', label='14-bit')
+
+    ax.legend()
 
     plt.savefig(result_fn)
 

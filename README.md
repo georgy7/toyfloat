@@ -18,14 +18,11 @@ It has:
 
 ![Formula](images/formula.png)
 
-![Toyfloat in uint16: 4 empty bits, exponent, sign and mantissa.](images/bits.png)
-
-![Precision graph](images/precision.png)
-
-## Other options
-
 ```
+____ xxxx smmm mmmm (default)
 ____ xxxx mmmm mmmm (unsigned)
 ___s xxxx mmmm mmmm (13-bit)
 __xx xxsm mmmm mmmm (14-bit)
 ```
+
+![Precision graph](images/comparison.png)
