@@ -687,6 +687,180 @@ func Test14IgnoringMostSignificantBits(t *testing.T) {
 
 // ------------------------
 
+func TestM11X3Precision(t *testing.T) {
+	tests := getToyfloatPositiveSample()
+
+	fixPrecision := func(number, precision float64) float64 {
+		if number < 0.0158 {
+			return 0.000008
+		} else {
+			return precision * 0.0625
+		}
+	}
+
+	for _, tt := range tests {
+		if tt.number <= 4.0 {
+			toy := EncodeM11X3(tt.number)
+			result := DecodeM11X3(toy)
+
+			diff := math.Abs(result - tt.number)
+			if diff > fixPrecision(tt.number, tt.precision) {
+				t.Fatalf("%.6f -> 0b%b, diff: %f", tt.number, toy, diff)
+			}
+		}
+	}
+
+	for _, tt := range tests {
+		if tt.number <= 4.0 {
+			negative := -tt.number
+			toy := EncodeM11X3(negative)
+			result := DecodeM11X3(toy)
+
+			diff := math.Abs(result - negative)
+			if diff > fixPrecision(tt.number, tt.precision) {
+				t.Fatalf("%.6f -> 0b%b, diff: %f", negative, toy, diff)
+			}
+		}
+	}
+}
+
+func TestM11X3Zero(t *testing.T) {
+	tf := EncodeM11X3(0)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeM11X3(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func TestM11X3PlusOne(t *testing.T) {
+	tf := EncodeM11X3(1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeM11X3(tf)
+
+	if result != 1 {
+		t.Fatalf("%f != 1", result)
+	}
+}
+
+func TestM11X3MinusOne(t *testing.T) {
+	tf := EncodeM11X3(-1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeM11X3(tf)
+
+	if result != -1 {
+		t.Fatalf("%f != -1", result)
+	}
+}
+
+func TestM11X3PositiveOverflow(t *testing.T) {
+	const expected = 4.046627
+	const eps = 0.0001
+
+	for i := 0; i < 1000; i++ {
+		v := expected + float64(i)
+		tf := EncodeM11X3(v)
+
+		result := DecodeM11X3(tf)
+
+		if math.Abs(result-expected) > eps {
+			t.Logf("Encoded: 0b%b", tf)
+			t.Fatalf("%f != %f (i = %d)", result, expected, i)
+		}
+	}
+}
+
+func TestM11X3NegativeOverflow(t *testing.T) {
+	const expected = -4.046627
+	const eps = 0.0001
+
+	for i := 0; i < 1000; i++ {
+		v := expected - float64(i)
+		tf := EncodeM11X3(v)
+
+		result := DecodeM11X3(tf)
+
+		if math.Abs(result-expected) > eps {
+			t.Logf("Encoded: 0b%b", tf)
+			t.Fatalf("%f != %f (i = %d)", result, expected, i)
+		}
+	}
+}
+
+func TestM11X3PositiveInfinity(t *testing.T) {
+	const expected = 4.046627
+	const eps = 0.0001
+
+	v := math.Inf(+1)
+	tf := EncodeM11X3(v)
+
+	result := DecodeM11X3(tf)
+
+	if math.Abs(result-expected) > eps {
+		t.Logf("Encoded: 0b%b", tf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func TestM11X3NegativeInfinity(t *testing.T) {
+	const expected = -4.046627
+	const eps = 0.0001
+
+	v := math.Inf(-1)
+	tf := EncodeM11X3(v)
+
+	result := DecodeM11X3(tf)
+
+	if math.Abs(result-expected) > eps {
+		t.Logf("Encoded: 0b%b", tf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func TestM11X3NaNConvertedToZero(t *testing.T) {
+	tf := EncodeM11X3(math.NaN())
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeM11X3(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func TestM11X3IgnoringMostSignificantBits(t *testing.T) {
+	for f := -255.0; f <= 255.0; f += 0.01 {
+		toy := EncodeM11X3(f)
+		original := DecodeM11X3(toy)
+
+		if 0b1000_0000_0000_0000&toy != 0x0 {
+			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
+		}
+
+		m := 0b1
+		modification := uint16(m) << 15
+		toyModified := toy | modification
+		modified := DecodeM11X3(toyModified)
+
+		if toy == toyModified {
+			t.Fatalf("This test is broken. "+
+				"Toy: 0b%b. Modification: 0b%b.",
+				toy, modification)
+		}
+
+		if modified != original {
+			t.Fatalf("%.4f != %.4f, modification: 0b%b",
+				modified, original, modification)
+		}
+	}
+}
+
+// ------------------------
+
 func TestMinusBitPosition(t *testing.T) {
 	tf := Encode(42)
 	t.Logf("Encoded: 0b%b", tf)
@@ -717,6 +891,18 @@ func Test14MinusBitPosition(t *testing.T) {
 
 	a := Decode14(tf)
 	b := -Decode14(tf | 0b10_0000_0000)
+
+	if a != b {
+		t.Fatalf("%f != %f", a, b)
+	}
+}
+
+func TestM11X3MinusBitPosition(t *testing.T) {
+	tf := EncodeM11X3(42)
+	t.Logf("Encoded: 0b%b", tf)
+
+	a := DecodeM11X3(tf)
+	b := -DecodeM11X3(tf | 0b1000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)

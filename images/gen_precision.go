@@ -51,4 +51,8 @@ func main() {
 	generate("precision14.tsv", func(x float64) float64 {
 		return toyfloat.Decode14(toyfloat.Encode14(x))
 	})
+
+	generate("precision_m11x3.tsv", func(x float64) float64 {
+		return toyfloat.DecodeM11X3(toyfloat.EncodeM11X3(x))
+	})
 }

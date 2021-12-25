@@ -19,10 +19,11 @@ It has:
 ![Formula](images/formula.png)
 
 ```
-____ xxxx smmm mmmm (default)
-____ xxxx mmmm mmmm (unsigned)
-___s xxxx mmmm mmmm (13-bit)
-__xx xxsm mmmm mmmm (14-bit)
+____ xxxx smmm mmmm - default
+____ xxxx mmmm mmmm - unsigned
+___s xxxx mmmm mmmm - 13-bit
+__xx xxsm mmmm mmmm - 14-bit
+_xxx smmm mmmm mmmm - m11x3
 ```
 
 ![Precision graph](images/comparison.png)

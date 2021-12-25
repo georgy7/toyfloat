@@ -20,13 +20,13 @@ def get_data(data_fn):
     return values, precision
 
 
-def get_comparison_data(data_fn):
+def get_comparison_data(data_fn, minPowerX10 = -22, maxPowerX10 = 21):
     values, precision = get_data(data_fn)
     assert len(values) == len(precision)
 
     rv, pv = [], []
 
-    for power10 in range(-25, 20, 2):
+    for power10 in range(minPowerX10, maxPowerX10, 2):
         power = power10 / 10
         min_value = pow(10, power-0.2)
         max_value = pow(10, power)
@@ -97,7 +97,7 @@ def make_image(data_fn, result_fn):
 
 def make_comparison(result_fn):
     figure, ax = new_figure()
-    figure.set_size_inches(5.6, 5)
+    figure.set_size_inches(5.6, 5.5)
     plt.subplots_adjust(left=0.162, bottom=0.129, right=0.954, top=0.954)
 
     values, precision = get_comparison_data('precision.tsv')
@@ -109,6 +109,9 @@ def make_comparison(result_fn):
     values, precision = get_comparison_data('precision14.tsv')
     plt.plot(values, precision, 'o-', label='14-bit')
 
+    values, precision = get_comparison_data('precision_m11x3.tsv', minPowerX10=-20, maxPowerX10=8)
+    plt.plot(values, precision, 'o-', label='m11x3')
+
     ax.legend()
 
     plt.savefig(result_fn)
@@ -119,4 +122,5 @@ if __name__ == "__main__":
     make_image('precision_unsigned.tsv', 'precision_unsigned.png')
     make_image('precision13.tsv', 'precision13.png')
     make_image('precision14.tsv', 'precision14.png')
+    make_image('precision_m11x3.tsv', 'precision_m11x3.png')
     make_comparison('comparison.png')

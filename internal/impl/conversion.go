@@ -2,38 +2,73 @@ package impl
 
 import "math"
 
-const exponentOffset = 8
-const a = 1.0 / 256.0
+type XConstants struct {
+	xMask               uint16
+	minExponent         int
+	maxExponent         int
+	twoPowerMinExponent float64
+	twoPowerMaxExponent float64
+}
 
-const reversedB = 1.0 - a
-const b = 1.0 / reversedB
+type Settings struct {
+	mSize  int
+	xShift int
+	minus  uint16
+	mMask  uint16
+	xc     XConstants
+}
 
-const minExponent = -exponentOffset
-const maxExponent = minExponent + 15
-const twoPowerMaxExponent = 128.0
+func X4() XConstants {
+	return XConstants{
+		xMask:               0b1111,
+		minExponent:         -8,
+		maxExponent:         -8 + 15,
+		twoPowerMinExponent: 1.0 / 256.0,
+		twoPowerMaxExponent: 128.0,
+	}
+}
 
-const xMask = 0b1111
+func X3() XConstants {
+	return XConstants{
+		xMask:               0b111,
+		minExponent:         -6,
+		maxExponent:         -6 + 7,
+		twoPowerMinExponent: 1.0 / 64.0,
+		twoPowerMaxExponent: 2.0,
+	}
+}
 
-func Encode(value float64, mSize int, xShift int,
-	minus uint16, mMask uint16) uint16 {
+func MakeSettings(mSize, xShift int, minus, mMask uint16, xc XConstants) Settings {
+	return Settings{mSize, xShift, minus, mMask, xc}
+}
+
+func Encode(value float64, settings *Settings) uint16 {
 
 	if math.IsNaN(value) {
 		return 0x0
 	}
 
-	binaryMaxValue := (xMask << xShift) | mMask
+	a := settings.xc.twoPowerMinExponent
+	reversedB := 1.0 - a
 
 	if value >= 0 {
-		return encode(value*reversedB+a, mSize, xShift, binaryMaxValue)
-	} else if 0b0 == minus {
+		return encode(value*reversedB+a, settings)
+	} else if 0b0 == settings.minus {
 		return 0x0
 	} else {
-		return minus | encode(-value*reversedB+a, mSize, xShift, binaryMaxValue)
+		return settings.minus | encode(-value*reversedB+a, settings)
 	}
 }
 
-func Decode(tf uint16, mSize int, xShift int,
-	minus uint16, mMask uint16) float64 {
+func Decode(tf uint16, settings *Settings) float64 {
+
+	exponentOffset := -settings.xc.minExponent
+	a := settings.xc.twoPowerMinExponent
+	reversedB := 1.0 - a
+	b := 1.0 / reversedB
+
+	xShift, xMask := settings.xShift, settings.xc.xMask
+	mMask, mSize := settings.mMask, settings.mSize
 
 	x := int((tf>>xShift)&xMask) - exponentOffset
 
@@ -42,7 +77,7 @@ func Decode(tf uint16, mSize int, xShift int,
 
 	r := significand * characteristic
 
-	return (r - a) * b * sign(tf, minus)
+	return (r - a) * b * sign(tf, settings.minus)
 }
 
 func sign(x uint16, minus uint16) float64 {
@@ -53,14 +88,21 @@ func sign(x uint16, minus uint16) float64 {
 	}
 }
 
-func encode(inner float64, mSize int, xShift int, maxValue uint16) uint16 {
+func encode(inner float64, s *Settings) uint16 {
+
+	xShift, xMask := s.xShift, s.xc.xMask
+	mMask, mSize := s.mMask, s.mSize
+
+	exponentOffset := -s.xc.minExponent
+	maxValue := (xMask << xShift) | mMask
+
 	twoPowerM := powerOfTwo(mSize)
-	internalMaximum := (1 + (twoPowerM-1)/twoPowerM) * twoPowerMaxExponent
+	internalMaximum := (1 + (twoPowerM-1)/twoPowerM) * s.xc.twoPowerMaxExponent
 	if inner >= internalMaximum {
 		return maxValue
 	}
 
-	x := getExponent(inner)
+	x := getExponent(inner, s)
 	binaryExponent := uint16(x+exponentOffset) << xShift
 
 	characteristic := powerOfTwo(x)
@@ -70,16 +112,16 @@ func encode(inner float64, mSize int, xShift int, maxValue uint16) uint16 {
 	return binarySignificand | binaryExponent
 }
 
-func getExponent(v float64) int {
+func getExponent(v float64, s *Settings) int {
 	modulus := math.Abs(v)
 
-	for exp := maxExponent; exp > minExponent; exp-- {
+	for exp := s.xc.maxExponent; exp > s.xc.minExponent; exp-- {
 		if powerOfTwo(exp) <= modulus {
 			return exp
 		}
 	}
 
-	return minExponent
+	return s.xc.minExponent
 }
 
 func powerOfTwo(x int) float64 {
