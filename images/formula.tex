@@ -13,27 +13,33 @@
         \\
 
             \vbox{\begin{equation*}
-            f(m, x) = sign \cdot ((1 + \frac{m}{128}) \cdot 2^{x} - a) \cdot b
+            f(m, x) = sign \cdot ((1 + \frac{m}{2^{M}}) \cdot 2^{x} - a) \cdot b
             \end{equation*}}
 
         \\
 
             \vbox{\begin{equation*}
-            \{ m \in \mathbb{Z} \mid 0 \leq m \leq 127 \}
+            \{ m \in \mathbb{Z} \mid 0 \leq m < 2^{M} \}
             \end{equation*}}
 
         \\
 
-            \vbox{\begin{equation*}
+            \vbox{\begin{equation*}\tag{4 bits}
             \{ x \in \mathbb{Z} \mid -8 \leq x \leq 7 \}
             \end{equation*}}
 
         \\
 
+            \vbox{\begin{equation*}\tag{3 bits}
+            \{ x \in \mathbb{Z} \mid -6 \leq x \leq 1 \}
+            \end{equation*}}
+
+        \\
+
             \vbox{\begin{equation*}
-            a = (1 + \frac{0}{128}) \cdot 2^{-8}
+            a = (1 + \frac{0}{2^{M}}) \cdot 2^{\min{X}}
             \quad \quad
-            a = 2^{-8}
+            a = 2^{\min{X}}
             \end{equation*}}
 
         \\
