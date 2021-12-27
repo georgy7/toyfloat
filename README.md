@@ -1,6 +1,6 @@
 # Toyfloat
 
-It encodes and decodes floating point numbers with a width of 12 to 15 bits.
+It encodes and decodes floating-point numbers with a width of 12 to 15 bits.
 
 Expected applications:
 
