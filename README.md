@@ -1,20 +1,19 @@
 # Toyfloat
 
-12-bit floating-point library.
+It encodes and decodes floating point numbers with a width of 12 to 15 bits.
 
 Expected applications:
 
-* file format design
-* lossy compression
+* file format design,
+* lossy compression.
 
 It has:
 
-* 7 bits normalized significand
-* 4 bits exponent
-* 1 sign bit
-* (-255.9961, 255.9961) values range
 * exact 0, 1, -1
 * no NaN
+* values, that are in range about:
+  * (-256, +256) for 4-bit exponent
+  * (-4, +4) for 3-bit exponent
 
 ![Formula](images/formula.png)
 
@@ -58,11 +57,17 @@ func main() {
 
 	f = toyfloat.Decode14(tf)
 	fmt.Printf("%f\n\n", f)
+
+	tf = toyfloat.EncodeM11X3(0.345)
+	fmt.Printf("0x%X\n", tf)
+
+	f = toyfloat.DecodeM11X3(tf)
+	fmt.Printf("%f\n\n", f)
 }
 ```
 
 ```shell
-go get github.com/georgy7/toyfloat
+go get -u github.com/georgy7/toyfloat
 go run example.go
 ```
 
@@ -75,4 +80,7 @@ go run example.go
 
 0x18C7
 0.344608
+
+0x435E
+0.344990
 ```

@@ -908,3 +908,63 @@ func TestM11X3MinusBitPosition(t *testing.T) {
 		t.Fatalf("%f != %f", a, b)
 	}
 }
+
+func TestReadme(t *testing.T) {
+	const input = 0.345
+	const eps = 1e-6
+
+	{
+		tf := Encode(input)
+		if tf != 0x631 {
+			t.Fatalf("Incorrect encoded: 0x%X (default)\n", tf)
+		}
+
+		result := Decode(tf)
+		if math.Abs(result-0.343137) > eps {
+			t.Fatalf("Incorrect decoded: %f (default)\n", result)
+		}
+	}
+
+	{
+		tf := EncodeUnsigned(input)
+		if tf != 0x663 {
+			t.Fatalf("Incorrect encoded: 0x%X (unsigned)\n", tf)
+		}
+	}
+
+	{
+		tf := Encode13(input)
+		if tf != 0x663 {
+			t.Fatalf("Incorrect encoded: 0x%X (13-bit)\n", tf)
+		}
+
+		result := Decode13(tf)
+		if math.Abs(result-0.344118) > eps {
+			t.Fatalf("Incorrect decoded: %f (13-bit)\n", result)
+		}
+	}
+
+	{
+		tf := Encode14(input)
+		if tf != 0x18C7 {
+			t.Fatalf("Incorrect encoded: 0x%X (14-bit)\n", tf)
+		}
+
+		result := Decode14(tf)
+		if math.Abs(result-0.344608) > eps {
+			t.Fatalf("Incorrect decoded: %f (14-bit)\n", result)
+		}
+	}
+
+	{
+		tf := EncodeM11X3(input)
+		if tf != 0x435E {
+			t.Fatalf("Incorrect encoded: 0x%X (m11x3)\n", tf)
+		}
+
+		result := DecodeM11X3(tf)
+		if math.Abs(result-0.34499) > eps {
+			t.Fatalf("Incorrect decoded: %f (m11x3)\n", result)
+		}
+	}
+}
