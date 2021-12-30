@@ -23,6 +23,7 @@ ____ xxxx mmmm mmmm - unsigned
 ___s xxxx mmmm mmmm - 13-bit
 __xx xxsm mmmm mmmm - 14-bit
 _xxx smmm mmmm mmmm - m11x3
+_sxx xmmm mmmm mmmm - m11x3d (D is for delta encoding)
 ```
 
 ![Precision graph](images/comparison.png)
@@ -72,14 +73,14 @@ go run example.go
 ```
 
 ```
-0x631
-0.343137
+0x632
+0.345098
 
-0x663
-0.344118
+0x664
+0.345098
 
-0x18C7
-0.344608
+0x18C8
+0.345098
 
 0x435E
 0.344990

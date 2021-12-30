@@ -1,6 +1,8 @@
 package impl
 
-import "math"
+import (
+	"math"
+)
 
 type XConstants struct {
 	xMask               uint16
@@ -40,6 +42,14 @@ func X3() XConstants {
 
 func MakeSettings(mSize, xShift int, minus, mMask uint16, xc XConstants) Settings {
 	return Settings{mSize, xShift, minus, mMask, xc}
+}
+
+func isNegative(tf uint16, settings *Settings) bool {
+	return 0b0 != tf&(settings.minus)
+}
+
+func abs(tf uint16, settings *Settings) uint16 {
+	return tf & (^settings.minus)
 }
 
 func Encode(value float64, settings *Settings) uint16 {
@@ -107,7 +117,7 @@ func encode(inner float64, s *Settings) uint16 {
 
 	characteristic := powerOfTwo(x)
 	normalized := inner / characteristic
-	binarySignificand := uint16((normalized - 1.0) * twoPowerM)
+	binarySignificand := uint16(math.Round((normalized - 1.0) * twoPowerM))
 
 	return binarySignificand | binaryExponent
 }
@@ -129,5 +139,68 @@ func powerOfTwo(x int) float64 {
 		return 1.0 / float64(int(1)<<-x)
 	} else {
 		return float64(int(1) << x)
+	}
+}
+
+func min(a int, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
+
+// EncodeDelta returns the number of steps between two values.
+// It's only for types with mSize equals xShift.
+func EncodeDelta(last uint16, x uint16, settings *Settings) int {
+	lastIsNegative := isNegative(last, settings)
+	xIsNegative := isNegative(x, settings)
+	sameSign := lastIsNegative == xIsNegative
+
+	absLast := int(abs(last, settings))
+	absX := int(abs(x, settings))
+
+	if sameSign {
+		diff := absX - absLast
+		if xIsNegative {
+			return -diff
+		} else {
+			return diff
+		}
+	} else {
+		sum := absX + absLast
+		if lastIsNegative {
+			return sum
+		} else {
+			return -sum
+		}
+	}
+}
+
+func DecodeDelta(last uint16, delta int, s *Settings) uint16 {
+	if delta == 0 {
+		return last
+	}
+
+	absLast := int(abs(last, s))
+
+	xShift, xMask := s.xShift, s.xc.xMask
+	mMask := s.mMask
+	maxValue := (xMask << xShift) | mMask
+
+	if isNegative(last, s) {
+		absX := min(absLast-delta, int(maxValue))
+		if absX >= 0 {
+			return s.minus | uint16(absX)
+		} else {
+			return uint16(min(-(absX + 1), int(maxValue)))
+		}
+	} else {
+		absX := min(absLast+delta, int(maxValue))
+		if absX >= 0 {
+			return uint16(absX)
+		} else {
+			return s.minus | uint16(min(-(absX+1), int(maxValue)))
+		}
 	}
 }
