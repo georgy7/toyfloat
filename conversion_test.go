@@ -1748,7 +1748,7 @@ func TestReadme(t *testing.T) {
 		}
 
 		result := DecodeM11X3(tf)
-		if math.Abs(result-0.34499) > eps {
+		if math.Abs(result-0.344990) > eps {
 			t.Fatalf("Incorrect decoded: %f (m11x3)\n", result)
 		}
 	}
@@ -1756,9 +1756,29 @@ func TestReadme(t *testing.T) {
 	{
 		tf := EncodeM11X3D(input)
 		result := DecodeM11X3D(tf)
-		if math.Abs(result-0.34499) > eps {
+		if math.Abs(result-0.344990) > eps {
 			t.Fatalf("Incorrect decoded: %f (m11x3d)\n", result)
 		}
+	}
+
+	{
+		series := []float64{0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
+		expected := []int{12, -2, 12, 1, -5}
+
+		previous := EncodeDD(series[0])
+		for i := 1; i < len(series); i++ {
+			this := EncodeDD(series[i])
+
+			delta := EncodeDeltaDD(previous, this)
+			expectedDelta := expected[i-1]
+
+			if delta != expectedDelta {
+				t.Fatalf("%d != %d\n", delta, expectedDelta)
+			}
+
+			previous = this
+		}
+
 	}
 }
 
