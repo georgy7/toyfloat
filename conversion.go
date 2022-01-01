@@ -12,6 +12,12 @@ func makeDefault() impl.Settings {
 	return impl.MakeSettings(7, 8, minus, mMask, impl.X4())
 }
 
+func makeDefaultD() impl.Settings {
+	const minus uint16 = 0b1000_0000_0000
+	const mMask uint16 = 0b0000_0111_1111
+	return impl.MakeSettings(7, 7, minus, mMask, impl.X4())
+}
+
 func makeUnsigned() impl.Settings {
 	const minus uint16 = 0b0
 	const mMask uint16 = 0b1111_1111
@@ -49,6 +55,16 @@ func Encode(v float64) uint16 {
 
 func Decode(x uint16) float64 {
 	settings := makeDefault()
+	return impl.Decode(x, &settings)
+}
+
+func EncodeDD(v float64) uint16 {
+	settings := makeDefaultD()
+	return impl.Encode(v, &settings)
+}
+
+func DecodeDD(x uint16) float64 {
+	settings := makeDefaultD()
 	return impl.Decode(x, &settings)
 }
 
@@ -100,6 +116,28 @@ func EncodeM11X3D(v float64) uint16 {
 func DecodeM11X3D(x uint16) float64 {
 	settings := makeM11X3D()
 	return impl.Decode(x, &settings)
+}
+
+// -----------
+
+func EncodeDeltaDD(last uint16, x uint16) int {
+	settings := makeDefaultD()
+	return impl.EncodeDelta(last, x, &settings)
+}
+
+func DecodeDeltaDD(last uint16, delta int) uint16 {
+	settings := makeDefaultD()
+	return impl.DecodeDelta(last, delta, &settings)
+}
+
+func EncodeDelta13(last uint16, x uint16) int {
+	settings := make13()
+	return impl.EncodeDelta(last, x, &settings)
+}
+
+func DecodeDelta13(last uint16, delta int) uint16 {
+	settings := make13()
+	return impl.DecodeDelta(last, delta, &settings)
 }
 
 func EncodeDeltaM11X3D(last uint16, x uint16) int {

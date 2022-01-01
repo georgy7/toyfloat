@@ -205,6 +205,171 @@ func TestIgnoringMostSignificantBits(t *testing.T) {
 	}
 }
 
+// ------------------------
+
+func TestDDZero(t *testing.T) {
+	tf := EncodeDD(0)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeDD(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func TestDDPlusOne(t *testing.T) {
+	tf := EncodeDD(1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeDD(tf)
+
+	if result != 1 {
+		t.Fatalf("%f != 1", result)
+	}
+}
+
+func TestDDMinusOne(t *testing.T) {
+	tf := EncodeDD(-1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeDD(tf)
+
+	if result != -1 {
+		t.Fatalf("%f != -1", result)
+	}
+}
+
+func TestDDPositiveOverflow(t *testing.T) {
+	const expected = 255.99607843137255
+	const eps = 0.0001
+
+	for i := 0; i < 1000; i++ {
+		v := expected + float64(i)
+		tf := EncodeDD(v)
+
+		result := DecodeDD(tf)
+
+		if math.Abs(result-expected) > eps {
+			t.Logf("Encoded: 0b%b", tf)
+			t.Fatalf("%f != %f (i = %d)", result, expected, i)
+		}
+	}
+}
+
+func TestDDNegativeOverflow(t *testing.T) {
+	const expected = -255.99607843137255
+	const eps = 0.0001
+
+	for i := 0; i < 1000; i++ {
+		v := expected - float64(i)
+		tf := EncodeDD(v)
+
+		result := DecodeDD(tf)
+
+		if math.Abs(result-expected) > eps {
+			t.Logf("Encoded: 0b%b", tf)
+			t.Fatalf("%f != %f (i = %d)", result, expected, i)
+		}
+	}
+}
+
+func TestDDPositiveInfinity(t *testing.T) {
+	const expected = 255.99607843137255
+	const eps = 0.0001
+
+	v := math.Inf(+1)
+	tf := EncodeDD(v)
+
+	result := DecodeDD(tf)
+
+	if math.Abs(result-expected) > eps {
+		t.Logf("Encoded: 0b%b", tf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func TestDDNegativeInfinity(t *testing.T) {
+	const expected = -255.99607843137255
+	const eps = 0.0001
+
+	v := math.Inf(-1)
+	tf := EncodeDD(v)
+
+	result := DecodeDD(tf)
+
+	if math.Abs(result-expected) > eps {
+		t.Logf("Encoded: 0b%b", tf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func TestDDNaNConvertedToZero(t *testing.T) {
+	tf := EncodeDD(math.NaN())
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := DecodeDD(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func TestDDPrecision(t *testing.T) {
+	tests := getToyfloatPositiveSample()
+
+	for _, tt := range tests {
+		toy := EncodeDD(tt.number)
+		result := DecodeDD(toy)
+
+		diff := math.Abs(result - tt.number)
+		if diff > tt.precision {
+			t.Fatalf("%.4f -> 0b%b, diff: %f", tt.number, toy, diff)
+		}
+	}
+
+	for _, tt := range tests {
+		negative := -tt.number
+		toy := EncodeDD(negative)
+		result := DecodeDD(toy)
+
+		diff := math.Abs(result - negative)
+		if diff > tt.precision {
+			t.Fatalf("%.4f -> 0b%b, diff: %f", negative, toy, diff)
+		}
+	}
+}
+
+func TestDDIgnoringMostSignificantBits(t *testing.T) {
+	for f := -255.0; f <= 255.0; f += 0.01 {
+		toy := EncodeDD(f)
+		original := DecodeDD(toy)
+
+		if 0xF000&toy != 0x0 {
+			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
+		}
+
+		for m := 0x1; m <= 0xF; m++ {
+			modification := uint16(m) << 12
+			toyModified := toy | modification
+			modified := DecodeDD(toyModified)
+
+			if toy == toyModified {
+				t.Fatalf("This test is broken. "+
+					"Toy: 0b%b. Modification: 0b%b.",
+					toy, modification)
+			}
+
+			if modified != original {
+				t.Fatalf("%.4f != %.4f, modification: 0b%b",
+					modified, original, modification)
+			}
+		}
+	}
+}
+
+// ------------------------
+
 func BenchmarkFloat64Increment(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		one := 1.0
@@ -1273,23 +1438,55 @@ func TestEncodeDeltaM11X3D(t *testing.T) {
 	const stop = 4.0
 	const step = 0.01
 
+	const eps = 1e-9
+
 	last := EncodeM11X3D(start)
 
 	for x := start + step; x <= stop; x += step {
-		eps := math.Max(x*0.001, 1e-5)
-
 		xtf := EncodeM11X3D(x)
+		expected := DecodeM11X3D(xtf)
+
 		delta := EncodeDeltaM11X3D(last, xtf)
 		resultTf := DecodeDeltaM11X3D(last, delta)
 		result := DecodeM11X3D(resultTf)
 
-		diff := math.Abs(result - DecodeM11X3D(xtf))
+		diff := math.Abs(result - expected)
 		if diff > eps {
 			t.Logf("eps = %f", eps)
 			t.Logf("delta = %d", delta)
 			t.Logf("last = 0b%b", last)
 			t.Logf("this = 0b%b", resultTf)
-			t.Fatalf("%f != %f, absolute diff=%f", result, x, diff)
+			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
+		}
+
+		last = EncodeM11X3D(x)
+	}
+}
+
+func TestEncodeDeltaDD(t *testing.T) {
+	const start = -256.0
+	const stop = 256.0
+	const step = 0.01
+
+	const eps = 1e-9
+
+	last := EncodeDD(start)
+
+	for x := start + step; x <= stop; x += step {
+		xtf := EncodeDD(x)
+		expected := DecodeDD(xtf)
+
+		delta := EncodeDeltaDD(last, xtf)
+		resultTf := DecodeDeltaDD(last, delta)
+		result := DecodeDD(resultTf)
+
+		diff := math.Abs(result - expected)
+		if diff > eps {
+			t.Logf("eps = %f", eps)
+			t.Logf("delta = %d", delta)
+			t.Logf("last = 0b%b", last)
+			t.Logf("this = 0b%b", resultTf)
+			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
 		}
 
 		last = EncodeM11X3D(x)
@@ -1304,6 +1501,18 @@ func TestMinusBitPosition(t *testing.T) {
 
 	a := Decode(tf)
 	b := -Decode(tf | 0b1000_0000)
+
+	if a != b {
+		t.Fatalf("%f != %f", a, b)
+	}
+}
+
+func TestDDMinusBitPosition(t *testing.T) {
+	tf := EncodeDD(42)
+	t.Logf("Encoded: 0b%b", tf)
+
+	a := DecodeDD(tf)
+	b := -DecodeDD(tf | 0b1000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)

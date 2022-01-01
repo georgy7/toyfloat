@@ -23,7 +23,10 @@ ____ xxxx mmmm mmmm - unsigned
 ___s xxxx mmmm mmmm - 13-bit
 __xx xxsm mmmm mmmm - 14-bit
 _xxx smmm mmmm mmmm - m11x3
-_sxx xmmm mmmm mmmm - m11x3d (D is for delta encoding)
+
+____ sxxx xmmm mmmm - dd, defaultD (D is for delta encoding)
+__sx xxxm mmmm mmmm - 14d
+_sxx xmmm mmmm mmmm - m11x3d
 ```
 
 ![Precision graph](images/comparison.png)

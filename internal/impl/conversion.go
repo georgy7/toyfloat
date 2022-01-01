@@ -168,7 +168,8 @@ func EncodeDelta(last uint16, x uint16, settings *Settings) int {
 			return diff
 		}
 	} else {
-		sum := absX + absLast
+		// the additional 1 is minus zero
+		sum := absX + 1 + absLast
 		if lastIsNegative {
 			return sum
 		} else {
