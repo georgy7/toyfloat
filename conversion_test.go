@@ -1761,3 +1761,14 @@ func TestReadme(t *testing.T) {
 		}
 	}
 }
+
+func TestExtremeCases(t *testing.T) {
+	{
+		input := 0.9999999999995131
+		result := Decode13(Encode13(input))
+
+		if math.Abs(result-input) > 0.001 {
+			t.Fatalf("%f != %f (13-bit)\n", result, input)
+		}
+	}
+}

@@ -101,16 +101,16 @@ def make_comparison(result_fn):
     plt.subplots_adjust(left=0.162, bottom=0.129, right=0.954, top=0.954)
 
     values, precision = get_comparison_data('precision.tsv')
-    plt.plot(values, precision, 'o-', label='default')
+    plt.plot(values, precision, 'o-', label='default / dd')
 
     values, precision = get_comparison_data('precision13.tsv')
     plt.plot(values, precision, 'o-', label='unsigned / 13-bit')
 
     values, precision = get_comparison_data('precision14.tsv')
-    plt.plot(values, precision, 'o-', label='14-bit')
+    plt.plot(values, precision, 'o-', label='14-bit / 14d')
 
     values, precision = get_comparison_data('precision_m11x3.tsv', minPowerX10=-20, maxPowerX10=8)
-    plt.plot(values, precision, 'o-', label='m11x3')
+    plt.plot(values, precision, 'o-', label='m11x3 / m11x3d')
 
     ax.legend()
 
@@ -123,4 +123,9 @@ if __name__ == "__main__":
     make_image('precision13.tsv', 'precision13.png')
     make_image('precision14.tsv', 'precision14.png')
     make_image('precision_m11x3.tsv', 'precision_m11x3.png')
+
+    make_image('precision_dd.tsv', 'precision_dd.png')
+    make_image('precision14d.tsv', 'precision14d.png')
+    make_image('precision_m11x3d.tsv', 'precision_m11x3d.png')
+
     make_comparison('comparison.png')

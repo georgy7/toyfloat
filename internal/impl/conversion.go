@@ -122,11 +122,14 @@ func encode(inner float64, s *Settings) uint16 {
 	return binarySignificand | binaryExponent
 }
 
-func getExponent(v float64, s *Settings) int {
-	modulus := math.Abs(v)
+func getExponent(innerValue float64, s *Settings) int {
+	modulus := math.Abs(innerValue)
+
+	eps := 0.5 / powerOfTwo(s.mSize)
+	factor := 2.0 - eps
 
 	for exp := s.xc.maxExponent; exp > s.xc.minExponent; exp-- {
-		if powerOfTwo(exp) <= modulus {
+		if factor*powerOfTwo(exp-1) <= modulus {
 			return exp
 		}
 	}
