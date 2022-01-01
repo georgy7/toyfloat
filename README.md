@@ -68,7 +68,7 @@ func main() {
 	f = toyfloat.DecodeM11X3(tf)
 	fmt.Printf("%f\n\n", f)
 
-	series := []float64{0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
+	series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
 	previous := toyfloat.EncodeDD(series[0])
 	for i := 1; i < len(series); i++ {
 		this := toyfloat.EncodeDD(series[i])
@@ -97,6 +97,8 @@ go run example.go
 0x435E
 0.344990
 
+387
+414
 12
 -2
 12

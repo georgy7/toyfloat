@@ -1762,8 +1762,8 @@ func TestReadme(t *testing.T) {
 	}
 
 	{
-		series := []float64{0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
-		expected := []int{12, -2, 12, 1, -5}
+		series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
+		expected := []int{387, 414, 12, -2, 12, 1, -5}
 
 		previous := EncodeDD(series[0])
 		for i := 1; i < len(series); i++ {
