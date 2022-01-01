@@ -117,7 +117,10 @@ func encode(inner float64, s *Settings) uint16 {
 
 	characteristic := powerOfTwo(x)
 	normalized := inner / characteristic
-	binarySignificand := uint16(math.Round((normalized - 1.0) * twoPowerM))
+
+	mFloat := (normalized - 1.0) * twoPowerM
+	mMax := twoPowerM - 1.0
+	binarySignificand := uint16(math.Min(math.Round(mFloat), mMax))
 
 	return binarySignificand | binaryExponent
 }
