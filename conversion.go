@@ -54,11 +54,13 @@ func makeM11X3D() impl.Settings {
 	return impl.MakeSettings(11, 11, minus, mMask, impl.X3())
 }
 
+// Deprecated: Please, use EncodeDD instead.
 func Encode(v float64) uint16 {
 	settings := makeDefault()
 	return impl.Encode(v, &settings)
 }
 
+// Deprecated: Please, use DecodeDD instead.
 func Decode(x uint16) float64 {
 	settings := makeDefault()
 	return impl.Decode(x, &settings)
@@ -94,11 +96,13 @@ func Decode13(x uint16) float64 {
 	return impl.Decode(x, &settings)
 }
 
+// Deprecated: Please, use Encode14D instead.
 func Encode14(v float64) uint16 {
 	settings := make14()
 	return impl.Encode(v, &settings)
 }
 
+// Deprecated: Please, use Decode14D instead.
 func Decode14(x uint16) float64 {
 	settings := make14()
 	return impl.Decode(x, &settings)
@@ -114,11 +118,13 @@ func Decode14D(x uint16) float64 {
 	return impl.Decode(x, &settings)
 }
 
+// Deprecated: Please, use EncodeM11X3D instead.
 func EncodeM11X3(v float64) uint16 {
 	settings := makeM11X3()
 	return impl.Encode(v, &settings)
 }
 
+// Deprecated: Please, use DecodeM11X3D instead.
 func DecodeM11X3(x uint16) float64 {
 	settings := makeM11X3()
 	return impl.Decode(x, &settings)
