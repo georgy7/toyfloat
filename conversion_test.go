@@ -852,6 +852,61 @@ func Test14IgnoringMostSignificantBits(t *testing.T) {
 
 // ------------------------
 
+func Test14DPrecision(t *testing.T) {
+	tests := getToyfloatPositiveSample()
+
+	for _, tt := range tests {
+		toy := Encode14D(tt.number)
+		result := Decode14D(toy)
+
+		diff := math.Abs(result - tt.number)
+		if diff > tt.precision*0.25 {
+			t.Fatalf("%.4f -> 0b%b, diff: %f", tt.number, toy, diff)
+		}
+	}
+
+	for _, tt := range tests {
+		negative := -tt.number
+		toy := Encode14D(negative)
+		result := Decode14D(toy)
+
+		diff := math.Abs(result - negative)
+		if diff > tt.precision*0.25 {
+			t.Fatalf("%.4f -> 0b%b, diff: %f", negative, toy, diff)
+		}
+	}
+}
+
+func Test14DIgnoringMostSignificantBits(t *testing.T) {
+	for f := -255.0; f <= 255.0; f += 0.01 {
+		toy := Encode14D(f)
+		original := Decode14D(toy)
+
+		if 0b1100_0000_0000_0000&toy != 0x0 {
+			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
+		}
+
+		for m := 0b01; m <= 0b11; m++ {
+			modification := uint16(m) << 14
+			toyModified := toy | modification
+			modified := Decode14D(toyModified)
+
+			if toy == toyModified {
+				t.Fatalf("This test is broken. "+
+					"Toy: 0b%b. Modification: 0b%b.",
+					toy, modification)
+			}
+
+			if modified != original {
+				t.Fatalf("%.4f != %.4f, modification: 0b%b",
+					modified, original, modification)
+			}
+		}
+	}
+}
+
+// ------------------------
+
 func TestM11X3Precision(t *testing.T) {
 	tests := getToyfloatPositiveSample()
 
@@ -1523,6 +1578,36 @@ func TestEncodeDelta13(t *testing.T) {
 	}
 }
 
+func TestEncodeDelta14D(t *testing.T) {
+	const start = -256.0
+	const stop = 256.0
+	const step = 0.01
+
+	const eps = 1e-9
+
+	last := Encode14D(start)
+
+	for x := start + step; x <= stop; x += step {
+		xtf := Encode14D(x)
+		expected := Decode14D(xtf)
+
+		delta := EncodeDelta14D(last, xtf)
+		resultTf := DecodeDelta14D(last, delta)
+		result := Decode14D(resultTf)
+
+		diff := math.Abs(result - expected)
+		if diff > eps {
+			t.Logf("eps = %f", eps)
+			t.Logf("delta = %d", delta)
+			t.Logf("last = 0b%b", last)
+			t.Logf("this = 0b%b", resultTf)
+			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
+		}
+
+		last = xtf
+	}
+}
+
 // ------------------------
 
 func TestMinusBitPosition(t *testing.T) {
@@ -1567,6 +1652,18 @@ func Test14MinusBitPosition(t *testing.T) {
 
 	a := Decode14(tf)
 	b := -Decode14(tf | 0b10_0000_0000)
+
+	if a != b {
+		t.Fatalf("%f != %f", a, b)
+	}
+}
+
+func Test14DMinusBitPosition(t *testing.T) {
+	tf := Encode14D(42)
+	t.Logf("Encoded: 0b%b", tf)
+
+	a := Decode14D(tf)
+	b := -Decode14D(tf | 0b10_0000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)
