@@ -36,12 +36,12 @@ func generate(fn string, encodeDecode func(x float64) float64) {
 }
 
 func main() {
-	generate("precision.tsv", func(x float64) float64 {
-		return toyfloat.Decode(toyfloat.Encode(x))
+	generate("precision12.tsv", func(x float64) float64 {
+		return toyfloat.Decode12(toyfloat.Encode12(x))
 	})
 
-	generate("precision_unsigned.tsv", func(x float64) float64 {
-		return toyfloat.DecodeUnsigned(toyfloat.EncodeUnsigned(x))
+	generate("precision12u.tsv", func(x float64) float64 {
+		return toyfloat.Decode12U(toyfloat.Encode12U(x))
 	})
 
 	generate("precision13.tsv", func(x float64) float64 {
@@ -52,19 +52,7 @@ func main() {
 		return toyfloat.Decode14(toyfloat.Encode14(x))
 	})
 
-	generate("precision_m11x3.tsv", func(x float64) float64 {
-		return toyfloat.DecodeM11X3(toyfloat.EncodeM11X3(x))
-	})
-
-	generate("precision_dd.tsv", func(x float64) float64 {
-		return toyfloat.DecodeDD(toyfloat.EncodeDD(x))
-	})
-
-	generate("precision14d.tsv", func(x float64) float64 {
-		return toyfloat.Decode14D(toyfloat.Encode14D(x))
-	})
-
-	generate("precision_m11x3d.tsv", func(x float64) float64 {
-		return toyfloat.DecodeM11X3D(toyfloat.EncodeM11X3D(x))
+	generate("precision15x3.tsv", func(x float64) float64 {
+		return toyfloat.Decode15X3(toyfloat.Encode15X3(x))
 	})
 }

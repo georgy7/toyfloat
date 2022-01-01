@@ -6,19 +6,13 @@ import (
 	"github.com/georgy7/toyfloat/internal/impl"
 )
 
-func makeDefault() impl.Settings {
-	const minus uint16 = 0b1000_0000
-	const mMask uint16 = 0b0111_1111
-	return impl.MakeSettings(7, 8, minus, mMask, impl.X4())
-}
-
-func makeDefaultD() impl.Settings {
+func make12() impl.Settings {
 	const minus uint16 = 0b1000_0000_0000
 	const mMask uint16 = 0b0000_0111_1111
 	return impl.MakeSettings(7, 7, minus, mMask, impl.X4())
 }
 
-func makeUnsigned() impl.Settings {
+func make12Unsigned() impl.Settings {
 	const minus uint16 = 0b0
 	const mMask uint16 = 0b1111_1111
 	return impl.MakeSettings(8, 8, minus, mMask, impl.X4())
@@ -31,58 +25,36 @@ func make13() impl.Settings {
 }
 
 func make14() impl.Settings {
-	const minus uint16 = 0b10_0000_0000
-	const mMask uint16 = 0b01_1111_1111
-	return impl.MakeSettings(9, 10, minus, mMask, impl.X4())
-}
-
-func make14D() impl.Settings {
 	const minus uint16 = 0b10_0000_0000_0000
 	const mMask uint16 = 0b00_0001_1111_1111
 	return impl.MakeSettings(9, 9, minus, mMask, impl.X4())
 }
 
-func makeM11X3() impl.Settings {
-	const minus uint16 = 0b1000_0000_0000
-	const mMask uint16 = 0b0111_1111_1111
-	return impl.MakeSettings(11, 12, minus, mMask, impl.X3())
-}
-
-func makeM11X3D() impl.Settings {
+func make15X3() impl.Settings {
 	const minus uint16 = 0b0100_0000_0000_0000
 	const mMask uint16 = 0b0000_0111_1111_1111
 	return impl.MakeSettings(11, 11, minus, mMask, impl.X3())
 }
 
-// Deprecated: Please, use EncodeDD instead.
-func Encode(v float64) uint16 {
-	settings := makeDefault()
+// --------------
+
+func Encode12(v float64) uint16 {
+	settings := make12()
 	return impl.Encode(v, &settings)
 }
 
-// Deprecated: Please, use DecodeDD instead.
-func Decode(x uint16) float64 {
-	settings := makeDefault()
+func Decode12(x uint16) float64 {
+	settings := make12()
 	return impl.Decode(x, &settings)
 }
 
-func EncodeDD(v float64) uint16 {
-	settings := makeDefaultD()
+func Encode12U(v float64) uint16 {
+	settings := make12Unsigned()
 	return impl.Encode(v, &settings)
 }
 
-func DecodeDD(x uint16) float64 {
-	settings := makeDefaultD()
-	return impl.Decode(x, &settings)
-}
-
-func EncodeUnsigned(v float64) uint16 {
-	settings := makeUnsigned()
-	return impl.Encode(v, &settings)
-}
-
-func DecodeUnsigned(x uint16) float64 {
-	settings := makeUnsigned()
+func Decode12U(x uint16) float64 {
+	settings := make12Unsigned()
 	return impl.Decode(x, &settings)
 }
 
@@ -96,69 +68,45 @@ func Decode13(x uint16) float64 {
 	return impl.Decode(x, &settings)
 }
 
-// Deprecated: Please, use Encode14D instead.
 func Encode14(v float64) uint16 {
 	settings := make14()
 	return impl.Encode(v, &settings)
 }
 
-// Deprecated: Please, use Decode14D instead.
 func Decode14(x uint16) float64 {
 	settings := make14()
 	return impl.Decode(x, &settings)
 }
 
-func Encode14D(v float64) uint16 {
-	settings := make14D()
+func Encode15X3(v float64) uint16 {
+	settings := make15X3()
 	return impl.Encode(v, &settings)
 }
 
-func Decode14D(x uint16) float64 {
-	settings := make14D()
-	return impl.Decode(x, &settings)
-}
-
-// Deprecated: Please, use EncodeM11X3D instead.
-func EncodeM11X3(v float64) uint16 {
-	settings := makeM11X3()
-	return impl.Encode(v, &settings)
-}
-
-// Deprecated: Please, use DecodeM11X3D instead.
-func DecodeM11X3(x uint16) float64 {
-	settings := makeM11X3()
-	return impl.Decode(x, &settings)
-}
-
-func EncodeM11X3D(v float64) uint16 {
-	settings := makeM11X3D()
-	return impl.Encode(v, &settings)
-}
-
-func DecodeM11X3D(x uint16) float64 {
-	settings := makeM11X3D()
+func Decode15X3(x uint16) float64 {
+	settings := make15X3()
 	return impl.Decode(x, &settings)
 }
 
 // -----------
 
-func GetIntegerDeltaDD(last uint16, x uint16) int {
-	settings := makeDefaultD()
+func GetIntegerDelta12(last uint16, x uint16) int {
+	settings := make12()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func UseIntegerDeltaDD(last uint16, delta int) uint16 {
-	settings := makeDefaultD()
+func UseIntegerDelta12(last uint16, delta int) uint16 {
+	settings := make12()
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
-func GetIntegerDeltaUnsigned(last uint16, x uint16) int {
-	settings := makeUnsigned()
+func GetIntegerDelta12U(last uint16, x uint16) int {
+	settings := make12Unsigned()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func UseIntegerDeltaUnsigned(last uint16, delta int) uint16 {
-	settings := makeUnsigned()
+func UseIntegerDelta12U(last uint16, delta int) uint16 {
+	settings := make12Unsigned()
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
@@ -172,22 +120,22 @@ func UseIntegerDelta13(last uint16, delta int) uint16 {
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
-func GetIntegerDelta14D(last uint16, x uint16) int {
-	settings := make14D()
+func GetIntegerDelta14(last uint16, x uint16) int {
+	settings := make14()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func UseIntegerDelta14D(last uint16, delta int) uint16 {
-	settings := make14D()
+func UseIntegerDelta14(last uint16, delta int) uint16 {
+	settings := make14()
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
-func GetIntegerDeltaM11X3D(last uint16, x uint16) int {
-	settings := makeM11X3D()
+func GetIntegerDelta15X3(last uint16, x uint16) int {
+	settings := make15X3()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func UseIntegerDeltaM11X3D(last uint16, delta int) uint16 {
-	settings := makeM11X3D()
+func UseIntegerDelta15X3(last uint16, delta int) uint16 {
+	settings := make15X3()
 	return impl.DecodeDelta(last, delta, &settings)
 }

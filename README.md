@@ -18,15 +18,11 @@ It has:
 ![Formula](images/formula.png)
 
 ```
-____ xxxx smmm mmmm - default
-____ xxxx mmmm mmmm - unsigned
+____ sxxx xmmm mmmm - 12-bit
+____ xxxx mmmm mmmm - 12-bit unsigned
 ___s xxxx mmmm mmmm - 13-bit
-__xx xxsm mmmm mmmm - 14-bit
-_xxx smmm mmmm mmmm - m11x3
-
-____ sxxx xmmm mmmm - dd, defaultD (D is for delta encoding)
-__sx xxxm mmmm mmmm - 14d
-_sxx xmmm mmmm mmmm - m11x3d
+__sx xxxm mmmm mmmm - 14-bit
+_sxx xmmm mmmm mmmm - 15-bit with 3-bit exponent
 ```
 
 ![Precision graph](images/comparison.png)
@@ -44,10 +40,10 @@ import (
 func main() {
 	println()
 
-	tf := toyfloat.EncodeDD(0.345)
+	tf := toyfloat.Encode12(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f := toyfloat.DecodeDD(tf)
+	f := toyfloat.Decode12(tf)
 	fmt.Printf("%f\n\n", f)
 
 	tf = toyfloat.Encode13(0.345)
@@ -56,23 +52,23 @@ func main() {
 	f = toyfloat.Decode13(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.Encode14D(0.345)
+	tf = toyfloat.Encode14(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.Decode14D(tf)
+	f = toyfloat.Decode14(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.EncodeM11X3D(0.345)
+	tf = toyfloat.Encode15X3(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.DecodeM11X3D(tf)
+	f = toyfloat.Decode15X3(tf)
 	fmt.Printf("%f\n\n", f)
 
 	series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
-	previous := toyfloat.EncodeDD(series[0])
+	previous := toyfloat.Encode12(series[0])
 	for i := 1; i < len(series); i++ {
-		this := toyfloat.EncodeDD(series[i])
-		delta := toyfloat.GetIntegerDeltaDD(previous, this)
+		this := toyfloat.Encode12(series[i])
+		delta := toyfloat.GetIntegerDelta12(previous, this)
 		fmt.Printf("%d\n", delta)
 		previous = this
 	}
