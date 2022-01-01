@@ -1459,7 +1459,7 @@ func TestEncodeDeltaM11X3D(t *testing.T) {
 			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
 		}
 
-		last = EncodeM11X3D(x)
+		last = xtf
 	}
 }
 
@@ -1489,7 +1489,37 @@ func TestEncodeDeltaDD(t *testing.T) {
 			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
 		}
 
-		last = EncodeM11X3D(x)
+		last = xtf
+	}
+}
+
+func TestEncodeDelta13(t *testing.T) {
+	const start = -256.0
+	const stop = 256.0
+	const step = 0.01
+
+	const eps = 1e-9
+
+	last := Encode13(start)
+
+	for x := start + step; x <= stop; x += step {
+		xtf := Encode13(x)
+		expected := Decode13(xtf)
+
+		delta := EncodeDelta13(last, xtf)
+		resultTf := DecodeDelta13(last, delta)
+		result := Decode13(resultTf)
+
+		diff := math.Abs(result - expected)
+		if diff > eps {
+			t.Logf("eps = %f", eps)
+			t.Logf("delta = %d", delta)
+			t.Logf("last = 0b%b", last)
+			t.Logf("this = 0b%b", resultTf)
+			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
+		}
+
+		last = xtf
 	}
 }
 
