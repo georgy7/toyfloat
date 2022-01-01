@@ -152,6 +152,16 @@ func UseIntegerDeltaDD(last uint16, delta int) uint16 {
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
+func GetIntegerDeltaUnsigned(last uint16, x uint16) int {
+	settings := makeUnsigned()
+	return impl.EncodeDelta(last, x, &settings)
+}
+
+func UseIntegerDeltaUnsigned(last uint16, delta int) uint16 {
+	settings := makeUnsigned()
+	return impl.DecodeDelta(last, delta, &settings)
+}
+
 func GetIntegerDelta13(last uint16, x uint16) int {
 	settings := make13()
 	return impl.EncodeDelta(last, x, &settings)

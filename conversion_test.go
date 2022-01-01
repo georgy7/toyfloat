@@ -383,9 +383,9 @@ func BenchmarkFloat64Increment(b *testing.B) {
 func BenchmarkDecodeEncodeIncrement(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		one := 1.0
-		counter := Encode(0.0)
+		counter := EncodeDD(0.0)
 		for x := 0; x < 100000; x++ {
-			counter = Encode(Decode(counter) + one)
+			counter = EncodeDD(DecodeDD(counter) + one)
 		}
 	}
 }
@@ -1276,6 +1276,8 @@ func TestEncodeDecodeStability(t *testing.T) {
 	}
 }
 
+// ------------------------
+
 func TestUseDeltaM11X3D(t *testing.T) {
 	const eps060 = 0.00024   // x = -1
 	const eps030 = 0.00012   // x = -2
@@ -1534,6 +1536,217 @@ func TestGetDeltaDD(t *testing.T) {
 		delta := GetIntegerDeltaDD(last, xtf)
 		resultTf := UseIntegerDeltaDD(last, delta)
 		result := DecodeDD(resultTf)
+
+		diff := math.Abs(result - expected)
+		if diff > eps {
+			t.Logf("eps = %f", eps)
+			t.Logf("delta = %d", delta)
+			t.Logf("last = 0b%b", last)
+			t.Logf("this = 0b%b", resultTf)
+			t.Fatalf("%f != %f, absolute diff=%f", result, expected, diff)
+		}
+
+		last = xtf
+	}
+}
+
+func TestUseDeltaUnsigned(t *testing.T) {
+	const eps060 = 0.00195  // x = -1
+	const eps030 = 0.00097  // x = -2
+	const eps013 = 0.00048  // x = -3
+	const epsMin = 0.000015 // x = -8
+	const epsMax = 0.49     // x = 7
+
+	a := math.Pow(2, -8)
+	b := 1 / (1 - a)
+	twoPowerM := math.Pow(2, 8)
+
+	last := DecodeUnsigned(EncodeUnsigned(0.6))
+	lastTf := EncodeUnsigned(last)
+	t.Logf("Last encoded: 0b%b", lastTf)
+
+	resultTf := UseIntegerDeltaUnsigned(lastTf, 0)
+	result := DecodeUnsigned(resultTf)
+	expected := last
+
+	if math.Abs(result-expected) > eps060 {
+		t.Logf("delta=0 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, 1)
+	result = DecodeUnsigned(resultTf)
+	expected = last + ((1.0/twoPowerM)*0.5)*b
+
+	if math.Abs(result-expected) > eps060 {
+		t.Logf("delta=1 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, -1)
+	result = DecodeUnsigned(resultTf)
+	expected = last - ((1.0/twoPowerM)*0.5)*b
+
+	if math.Abs(result-expected) > eps060 {
+		t.Logf("delta=-1 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, 45)
+	result = DecodeUnsigned(resultTf)
+	expected = last + ((45.0/twoPowerM)*0.5)*b
+
+	if math.Abs(result-expected) > eps060 {
+		t.Logf("delta=123 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, -45)
+	result = DecodeUnsigned(resultTf)
+	expected = last - ((45.0/twoPowerM)*0.5)*b
+
+	if math.Abs(result-expected) > eps060 {
+		t.Logf("delta=-123 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	last = DecodeUnsigned(EncodeUnsigned(0.3))
+	lastTf = EncodeUnsigned(last)
+	t.Logf("Last encoded: 0b%b", lastTf)
+
+	mantissa := lastTf & 0b11111111
+	if mantissa != 54 {
+		t.Fatalf("This test is probably broken: mantissa equals %d.", mantissa)
+	}
+
+	result = DecodeUnsigned(UseIntegerDeltaUnsigned(lastTf, 0))
+	expected = last
+
+	if math.Abs(result-expected) > eps030 {
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	result = DecodeUnsigned(UseIntegerDeltaUnsigned(lastTf, 255-54))
+	expected = last + (((255.0-54.0)/twoPowerM)*0.25)*b
+
+	if math.Abs(result-expected) > eps030 {
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	result = DecodeUnsigned(UseIntegerDeltaUnsigned(lastTf, -54))
+	expected = last - ((54.0/twoPowerM)*0.25)*b
+
+	if math.Abs(result-expected) > eps030 {
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	result = DecodeUnsigned(UseIntegerDeltaUnsigned(lastTf, 255-54+1))
+	expected = last +
+		(((255.0-54.0)/twoPowerM)*0.25)*b +
+		((1.0/twoPowerM)*0.5)*b
+
+	if math.Abs(result-expected) > eps060 {
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	result = DecodeUnsigned(UseIntegerDeltaUnsigned(lastTf, -55))
+	expected = last -
+		((54.0/twoPowerM)*0.25)*b -
+		((1.0/twoPowerM)*0.125)*b
+
+	if math.Abs(result-expected) > eps013 {
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	lastTf = 0b0
+	last = DecodeUnsigned(lastTf)
+	t.Logf("Last encoded: 0b%b", lastTf)
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, 0)
+	result = DecodeUnsigned(resultTf)
+	expected = last
+
+	if math.Abs(result-expected) > epsMin {
+		t.Logf("delta=0 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, 1)
+	result = DecodeUnsigned(resultTf)
+	expected = last + ((1.0/twoPowerM)*0.00390625)*b
+
+	if math.Abs(result-expected) > epsMin {
+		t.Logf("delta=1 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, -1)
+	result = DecodeUnsigned(resultTf)
+	expected = last // zero is the minimum value
+
+	if result != expected {
+		t.Logf("delta=-1 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, -10)
+	result = DecodeUnsigned(resultTf)
+	expected = last // zero is the minimum value
+
+	if result != expected {
+		t.Logf("delta=-10 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	// big deltas
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, 234234)
+	result = DecodeUnsigned(resultTf)
+	expected = ((1.0+(twoPowerM-1)/twoPowerM)*128 - a) * b
+
+	if math.Abs(result-expected) > epsMax {
+		t.Logf("delta=234234 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, -16382)
+	result = DecodeUnsigned(resultTf)
+	expected = 0.0
+
+	if math.Abs(result-expected) > epsMin {
+		t.Logf("delta=-16382 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	last = DecodeUnsigned(EncodeUnsigned(0.234))
+	lastTf = EncodeUnsigned(last)
+
+	resultTf = UseIntegerDeltaUnsigned(lastTf, -26384)
+	result = DecodeUnsigned(resultTf)
+	expected = 0.0
+
+	if math.Abs(result-expected) > epsMin {
+		t.Logf("delta=-26384 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+}
+
+func TestGetDeltaUnsigned(t *testing.T) {
+	const start = 0.0
+	const stop = 256.0
+	const step = 0.01
+
+	const eps = 1e-9
+
+	last := EncodeUnsigned(start)
+
+	for x := start + step; x <= stop; x += step {
+		xtf := EncodeUnsigned(x)
+		expected := DecodeUnsigned(xtf)
+
+		delta := GetIntegerDeltaUnsigned(last, xtf)
+		resultTf := UseIntegerDeltaUnsigned(last, delta)
+		result := DecodeUnsigned(resultTf)
 
 		diff := math.Abs(result - expected)
 		if diff > eps {

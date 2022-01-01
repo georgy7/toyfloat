@@ -206,6 +206,8 @@ func DecodeDelta(last uint16, delta int, s *Settings) uint16 {
 		absX := min(absLast+delta, int(maxValue))
 		if absX >= 0 {
 			return uint16(absX)
+		} else if s.minus == 0b0 {
+			return 0b0
 		} else {
 			return s.minus | uint16(min(-(absX+1), int(maxValue)))
 		}
