@@ -44,10 +44,10 @@ import (
 func main() {
 	println()
 
-	tf := toyfloat.Encode(0.345)
+	tf := toyfloat.EncodeDD(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f := toyfloat.Decode(tf)
+	f := toyfloat.DecodeDD(tf)
 	fmt.Printf("%f\n\n", f)
 
 	tf = toyfloat.Encode13(0.345)
@@ -56,23 +56,23 @@ func main() {
 	f = toyfloat.Decode13(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.Encode14(0.345)
+	tf = toyfloat.Encode14D(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.Decode14(tf)
+	f = toyfloat.Decode14D(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.EncodeM11X3(0.345)
+	tf = toyfloat.EncodeM11X3D(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.DecodeM11X3(tf)
+	f = toyfloat.DecodeM11X3D(tf)
 	fmt.Printf("%f\n\n", f)
 
 	series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
 	previous := toyfloat.EncodeDD(series[0])
 	for i := 1; i < len(series); i++ {
 		this := toyfloat.EncodeDD(series[i])
-		delta := toyfloat.EncodeDeltaDD(previous, this)
+		delta := toyfloat.GetIntegerDeltaDD(previous, this)
 		fmt.Printf("%d\n", delta)
 		previous = this
 	}
@@ -85,16 +85,16 @@ go run example.go
 ```
 
 ```
-0x632
+0x332
 0.345098
 
 0x664
 0.345098
 
-0x18C8
+0xCC8
 0.345098
 
-0x435E
+0x235E
 0.344990
 
 387

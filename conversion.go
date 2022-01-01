@@ -142,42 +142,42 @@ func DecodeM11X3D(x uint16) float64 {
 
 // -----------
 
-func EncodeDeltaDD(last uint16, x uint16) int {
+func GetIntegerDeltaDD(last uint16, x uint16) int {
 	settings := makeDefaultD()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func DecodeDeltaDD(last uint16, delta int) uint16 {
+func UseIntegerDeltaDD(last uint16, delta int) uint16 {
 	settings := makeDefaultD()
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
-func EncodeDelta13(last uint16, x uint16) int {
+func GetIntegerDelta13(last uint16, x uint16) int {
 	settings := make13()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func DecodeDelta13(last uint16, delta int) uint16 {
+func UseIntegerDelta13(last uint16, delta int) uint16 {
 	settings := make13()
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
-func EncodeDelta14D(last uint16, x uint16) int {
+func GetIntegerDelta14D(last uint16, x uint16) int {
 	settings := make14D()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func DecodeDelta14D(last uint16, delta int) uint16 {
+func UseIntegerDelta14D(last uint16, delta int) uint16 {
 	settings := make14D()
 	return impl.DecodeDelta(last, delta, &settings)
 }
 
-func EncodeDeltaM11X3D(last uint16, x uint16) int {
+func GetIntegerDeltaM11X3D(last uint16, x uint16) int {
 	settings := makeM11X3D()
 	return impl.EncodeDelta(last, x, &settings)
 }
 
-func DecodeDeltaM11X3D(last uint16, delta int) uint16 {
+func UseIntegerDeltaM11X3D(last uint16, delta int) uint16 {
 	settings := makeM11X3D()
 	return impl.DecodeDelta(last, delta, &settings)
 }

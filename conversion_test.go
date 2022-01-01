@@ -1276,7 +1276,7 @@ func TestEncodeDecodeStability(t *testing.T) {
 	}
 }
 
-func TestDecodeDeltaM11X3D(t *testing.T) {
+func TestUseDeltaM11X3D(t *testing.T) {
 	const eps060 = 0.00024   // x = -1
 	const eps030 = 0.00012   // x = -2
 	const eps013 = 0.00006   // x = -3
@@ -1291,7 +1291,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 	lastTf := EncodeM11X3D(last)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf := DecodeDeltaM11X3D(lastTf, 0)
+	resultTf := UseIntegerDeltaM11X3D(lastTf, 0)
 	result := DecodeM11X3D(resultTf)
 	expected := last
 
@@ -1300,7 +1300,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, 1)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, 1)
 	result = DecodeM11X3D(resultTf)
 	expected = last + ((1.0/twoPowerM)*0.5)*b
 
@@ -1309,7 +1309,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -1)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -1)
 	result = DecodeM11X3D(resultTf)
 	expected = last - ((1.0/twoPowerM)*0.5)*b
 
@@ -1318,7 +1318,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, 123)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, 123)
 	result = DecodeM11X3D(resultTf)
 	expected = last + ((123.0/twoPowerM)*0.5)*b
 
@@ -1327,7 +1327,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -123)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -123)
 	result = DecodeM11X3D(resultTf)
 	expected = last - ((123.0/twoPowerM)*0.5)*b
 
@@ -1345,28 +1345,28 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("This test is probably broken: mantissa equals %d.", mantissa)
 	}
 
-	result = DecodeM11X3D(DecodeDeltaM11X3D(lastTf, 0))
+	result = DecodeM11X3D(UseIntegerDeltaM11X3D(lastTf, 0))
 	expected = last
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = DecodeM11X3D(DecodeDeltaM11X3D(lastTf, 2047-499))
+	result = DecodeM11X3D(UseIntegerDeltaM11X3D(lastTf, 2047-499))
 	expected = last + (((2047.0-499.0)/twoPowerM)*0.25)*b
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = DecodeM11X3D(DecodeDeltaM11X3D(lastTf, -499))
+	result = DecodeM11X3D(UseIntegerDeltaM11X3D(lastTf, -499))
 	expected = last - ((499.0/twoPowerM)*0.25)*b
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = DecodeM11X3D(DecodeDeltaM11X3D(lastTf, 2047-499+1))
+	result = DecodeM11X3D(UseIntegerDeltaM11X3D(lastTf, 2047-499+1))
 	expected = last +
 		(((2047.0-499.0)/twoPowerM)*0.25)*b +
 		((1.0/twoPowerM)*0.5)*b
@@ -1375,7 +1375,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = DecodeM11X3D(DecodeDeltaM11X3D(lastTf, -500))
+	result = DecodeM11X3D(UseIntegerDeltaM11X3D(lastTf, -500))
 	expected = last -
 		((499.0/twoPowerM)*0.25)*b -
 		((1.0/twoPowerM)*0.125)*b
@@ -1388,7 +1388,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 	last = DecodeM11X3D(lastTf)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf = DecodeDeltaM11X3D(lastTf, 0)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, 0)
 	result = DecodeM11X3D(resultTf)
 	expected = last
 
@@ -1397,7 +1397,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, 1)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, 1)
 	result = DecodeM11X3D(resultTf)
 	expected = last + ((1.0/twoPowerM)*0.015625)*b
 
@@ -1406,7 +1406,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -1)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -1)
 	result = DecodeM11X3D(resultTf)
 	expected = -last // minus zero
 
@@ -1422,7 +1422,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 	last = DecodeM11X3D(lastTf)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf = DecodeDeltaM11X3D(lastTf, 1)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, 1)
 	result = DecodeM11X3D(resultTf)
 	expected = -last // plus zero
 
@@ -1431,7 +1431,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -10)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -10)
 	result = DecodeM11X3D(resultTf)
 	expected = last - ((10.0/twoPowerM)*0.015625)*b
 
@@ -1442,7 +1442,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 
 	// big deltas
 
-	resultTf = DecodeDeltaM11X3D(lastTf, 234234)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, 234234)
 	result = DecodeM11X3D(resultTf)
 	expected = ((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
@@ -1451,7 +1451,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -16382)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -16382)
 	result = DecodeM11X3D(resultTf)
 	expected = -((1.0+(twoPowerM-2)/twoPowerM)*2 - a) * b
 
@@ -1460,7 +1460,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -16383)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -16383)
 	result = DecodeM11X3D(resultTf)
 	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
@@ -1469,7 +1469,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -16384)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -16384)
 	result = DecodeM11X3D(resultTf)
 	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
@@ -1478,7 +1478,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = DecodeDeltaM11X3D(lastTf, -26384)
+	resultTf = UseIntegerDeltaM11X3D(lastTf, -26384)
 	result = DecodeM11X3D(resultTf)
 	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
@@ -1488,7 +1488,7 @@ func TestDecodeDeltaM11X3D(t *testing.T) {
 	}
 }
 
-func TestEncodeDeltaM11X3D(t *testing.T) {
+func TestGetDeltaM11X3D(t *testing.T) {
 	const start = -4.0
 	const stop = 4.0
 	const step = 0.01
@@ -1501,8 +1501,8 @@ func TestEncodeDeltaM11X3D(t *testing.T) {
 		xtf := EncodeM11X3D(x)
 		expected := DecodeM11X3D(xtf)
 
-		delta := EncodeDeltaM11X3D(last, xtf)
-		resultTf := DecodeDeltaM11X3D(last, delta)
+		delta := GetIntegerDeltaM11X3D(last, xtf)
+		resultTf := UseIntegerDeltaM11X3D(last, delta)
 		result := DecodeM11X3D(resultTf)
 
 		diff := math.Abs(result - expected)
@@ -1518,7 +1518,7 @@ func TestEncodeDeltaM11X3D(t *testing.T) {
 	}
 }
 
-func TestEncodeDeltaDD(t *testing.T) {
+func TestGetDeltaDD(t *testing.T) {
 	const start = -256.0
 	const stop = 256.0
 	const step = 0.01
@@ -1531,8 +1531,8 @@ func TestEncodeDeltaDD(t *testing.T) {
 		xtf := EncodeDD(x)
 		expected := DecodeDD(xtf)
 
-		delta := EncodeDeltaDD(last, xtf)
-		resultTf := DecodeDeltaDD(last, delta)
+		delta := GetIntegerDeltaDD(last, xtf)
+		resultTf := UseIntegerDeltaDD(last, delta)
 		result := DecodeDD(resultTf)
 
 		diff := math.Abs(result - expected)
@@ -1548,7 +1548,7 @@ func TestEncodeDeltaDD(t *testing.T) {
 	}
 }
 
-func TestEncodeDelta13(t *testing.T) {
+func TestGetDelta13(t *testing.T) {
 	const start = -256.0
 	const stop = 256.0
 	const step = 0.01
@@ -1561,8 +1561,8 @@ func TestEncodeDelta13(t *testing.T) {
 		xtf := Encode13(x)
 		expected := Decode13(xtf)
 
-		delta := EncodeDelta13(last, xtf)
-		resultTf := DecodeDelta13(last, delta)
+		delta := GetIntegerDelta13(last, xtf)
+		resultTf := UseIntegerDelta13(last, delta)
 		result := Decode13(resultTf)
 
 		diff := math.Abs(result - expected)
@@ -1578,7 +1578,7 @@ func TestEncodeDelta13(t *testing.T) {
 	}
 }
 
-func TestEncodeDelta14D(t *testing.T) {
+func TestGetDelta14D(t *testing.T) {
 	const start = -256.0
 	const stop = 256.0
 	const step = 0.01
@@ -1591,8 +1591,8 @@ func TestEncodeDelta14D(t *testing.T) {
 		xtf := Encode14D(x)
 		expected := Decode14D(xtf)
 
-		delta := EncodeDelta14D(last, xtf)
-		resultTf := DecodeDelta14D(last, delta)
+		delta := GetIntegerDelta14D(last, xtf)
+		resultTf := UseIntegerDelta14D(last, delta)
 		result := Decode14D(resultTf)
 
 		diff := math.Abs(result - expected)
@@ -1699,14 +1699,14 @@ func TestReadme(t *testing.T) {
 	const eps = 1e-6
 
 	{
-		tf := Encode(input)
-		if tf != 0x632 {
-			t.Fatalf("Incorrect encoded: 0x%X (default)\n", tf)
+		tf := EncodeDD(input)
+		if tf != 0x332 {
+			t.Fatalf("Incorrect encoded: 0x%X (defaultD)\n", tf)
 		}
 
-		result := Decode(tf)
+		result := DecodeDD(tf)
 		if math.Abs(result-0.345098) > eps {
-			t.Fatalf("Incorrect decoded: %f (default)\n", result)
+			t.Fatalf("Incorrect decoded: %f (defaultD)\n", result)
 		}
 	}
 
@@ -1730,26 +1730,26 @@ func TestReadme(t *testing.T) {
 	}
 
 	{
-		tf := Encode14(input)
-		if tf != 0x18C8 {
-			t.Fatalf("Incorrect encoded: 0x%X (14-bit)\n", tf)
+		tf := Encode14D(input)
+		if tf != 0xCC8 {
+			t.Fatalf("Incorrect encoded: 0x%X (14d)\n", tf)
 		}
 
-		result := Decode14(tf)
+		result := Decode14D(tf)
 		if math.Abs(result-0.345098) > eps {
-			t.Fatalf("Incorrect decoded: %f (14-bit)\n", result)
+			t.Fatalf("Incorrect decoded: %f (14d)\n", result)
 		}
 	}
 
 	{
-		tf := EncodeM11X3(input)
-		if tf != 0x435E {
-			t.Fatalf("Incorrect encoded: 0x%X (m11x3)\n", tf)
+		tf := EncodeM11X3D(input)
+		if tf != 0x235E {
+			t.Fatalf("Incorrect encoded: 0x%X (m11x3d)\n", tf)
 		}
 
-		result := DecodeM11X3(tf)
+		result := DecodeM11X3D(tf)
 		if math.Abs(result-0.344990) > eps {
-			t.Fatalf("Incorrect decoded: %f (m11x3)\n", result)
+			t.Fatalf("Incorrect decoded: %f (m11x3d)\n", result)
 		}
 	}
 
@@ -1769,7 +1769,7 @@ func TestReadme(t *testing.T) {
 		for i := 1; i < len(series); i++ {
 			this := EncodeDD(series[i])
 
-			delta := EncodeDeltaDD(previous, this)
+			delta := GetIntegerDeltaDD(previous, this)
 			expectedDelta := expected[i-1]
 
 			if delta != expectedDelta {
