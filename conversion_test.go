@@ -46,6 +46,44 @@ func getToyfloatPositiveSample() []struct {
 
 // ------------------------
 
+func TestX3BadArguments(t *testing.T) {
+	for i := -10; i <= 4; i++ {
+		if i <= 4 {
+			_, e := NewTypeX3(i, true)
+			if e == nil {
+				t.Fatalf("length=%d must result in an error", i)
+			}
+		}
+
+		if i <= 3 {
+			_, e := NewTypeX3(i, false)
+			if e == nil {
+				t.Fatalf("length=%d must result in an error (unsigned)", i)
+			}
+		}
+	}
+}
+
+func TestX4BadArguments(t *testing.T) {
+	for i := -10; i <= 4; i++ {
+		if i <= 5 {
+			_, e := NewTypeX4(i, true)
+			if e == nil {
+				t.Fatalf("length=%d must result in an error", i)
+			}
+		}
+
+		if i <= 4 {
+			_, e := NewTypeX4(i, false)
+			if e == nil {
+				t.Fatalf("length=%d must result in an error (unsigned)", i)
+			}
+		}
+	}
+}
+
+// ------------------------
+
 func Test12Zero(t *testing.T) {
 	tf := Encode12(0)
 	t.Logf("Encoded: 0b%b", tf)
@@ -225,6 +263,21 @@ func BenchmarkDecodeEncodeIncrement(b *testing.B) {
 		counter := Encode12(0.0)
 		for x := 0; x < 100000; x++ {
 			counter = Encode12(Decode12(counter) + one)
+		}
+	}
+}
+
+func BenchmarkDecodeEncodeIncrementCustomType(b *testing.B) {
+	toyfloat12, e := NewTypeX4(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		one := 1.0
+		counter := toyfloat12.Encode(0.0)
+		for x := 0; x < 100000; x++ {
+			counter = toyfloat12.Encode(toyfloat12.Decode(counter) + one)
 		}
 	}
 }

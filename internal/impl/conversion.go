@@ -1,11 +1,13 @@
 package impl
 
 import (
+	"errors"
 	"math"
 )
 
 type XConstants struct {
 	xMask               uint16
+	xSize               int
 	minExponent         int
 	maxExponent         int
 	twoPowerMinExponent float64
@@ -23,6 +25,7 @@ type Settings struct {
 func X4() XConstants {
 	return XConstants{
 		xMask:               0b1111,
+		xSize:               4,
 		minExponent:         -8,
 		maxExponent:         -8 + 15,
 		twoPowerMinExponent: 1.0 / 256.0,
@@ -33,6 +36,7 @@ func X4() XConstants {
 func X3() XConstants {
 	return XConstants{
 		xMask:               0b111,
+		xSize:               3,
 		minExponent:         -6,
 		maxExponent:         -6 + 7,
 		twoPowerMinExponent: 1.0 / 64.0,
@@ -40,8 +44,27 @@ func X3() XConstants {
 	}
 }
 
-func MakeSettings(mSize, xShift int, minus, mMask uint16, xc XConstants) Settings {
-	return Settings{mSize, xShift, minus, mMask, xc}
+func MakeSettings(mSize int, minus, mMask uint16, xc XConstants) Settings {
+	return Settings{mSize, mSize, minus, mMask, xc}
+}
+
+func NewSettings(length int, xc XConstants, signed bool) (Settings, error) {
+	mSize := length - xc.xSize
+	if signed {
+		mSize -= 1
+	}
+
+	if mSize < 1 {
+		return Settings{}, errors.New("mantissa must be at least 1 bit wide")
+	}
+
+	minus := uint16(0)
+	if signed {
+		minus = uint16(1) << (length - 1)
+	}
+
+	mMask := makeBitMask(mSize)
+	return MakeSettings(mSize, minus, mMask, xc), nil
 }
 
 func isNegative(tf uint16, settings *Settings) bool {
@@ -138,6 +161,22 @@ func getExponent(innerValue float64, s *Settings) int {
 	}
 
 	return s.xc.minExponent
+}
+
+func makeBitMask(bits int) uint16 {
+	count := bits
+	if count > 16 {
+		count = 16
+	}
+
+	const bit uint16 = 1
+
+	result := uint16(0)
+	for i := 0; i < count; i++ {
+		result |= bit << i
+	}
+
+	return result
 }
 
 func powerOfTwo(x int) float64 {

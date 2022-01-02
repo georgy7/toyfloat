@@ -6,136 +6,158 @@ import (
 	"github.com/georgy7/toyfloat/internal/impl"
 )
 
-func make12() impl.Settings {
-	const minus uint16 = 0b1000_0000_0000
-	const mMask uint16 = 0b0000_0111_1111
-	return impl.MakeSettings(7, 7, minus, mMask, impl.X4())
+// Type is your custom floating-point format.
+// It may be up to 16 bits wide.
+type Type struct {
+	settings impl.Settings
 }
 
-func make12Unsigned() impl.Settings {
-	const minus uint16 = 0b0
-	const mMask uint16 = 0b1111_1111
-	return impl.MakeSettings(8, 8, minus, mMask, impl.X4())
+func NewTypeX3(length int, signed bool) (Type, error) {
+	s, e := impl.NewSettings(length, impl.X3(), signed)
+	return Type{s}, e
 }
 
-func make13() impl.Settings {
-	const minus uint16 = 0b1_0000_0000_0000
-	const mMask uint16 = 0b0_0000_1111_1111
-	return impl.MakeSettings(8, 8, minus, mMask, impl.X4())
+func NewTypeX4(length int, signed bool) (Type, error) {
+	s, e := impl.NewSettings(length, impl.X4(), signed)
+	return Type{s}, e
 }
 
-func make14() impl.Settings {
-	const minus uint16 = 0b10_0000_0000_0000
-	const mMask uint16 = 0b00_0001_1111_1111
-	return impl.MakeSettings(9, 9, minus, mMask, impl.X4())
+func (t *Type) Encode(v float64) uint16 {
+	return impl.Encode(v, &t.settings)
 }
 
-func make15X3() impl.Settings {
-	const minus uint16 = 0b0100_0000_0000_0000
-	const mMask uint16 = 0b0000_0111_1111_1111
-	return impl.MakeSettings(11, 11, minus, mMask, impl.X3())
+func (t *Type) Decode(x uint16) float64 {
+	return impl.Decode(x, &t.settings)
+}
+
+func (t *Type) GetIntegerDelta(last uint16, x uint16) int {
+	return impl.EncodeDelta(last, x, &t.settings)
+}
+
+func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
+	return impl.DecodeDelta(last, delta, &t.settings)
 }
 
 // --------------
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Encode12(v float64) uint16 {
-	settings := make12()
-	return impl.Encode(v, &settings)
+	toyfloat12, _ := NewTypeX4(12, true)
+	return toyfloat12.Encode(v)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Decode12(x uint16) float64 {
-	settings := make12()
-	return impl.Decode(x, &settings)
+	toyfloat12, _ := NewTypeX4(12, true)
+	return toyfloat12.Decode(x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Encode12U(v float64) uint16 {
-	settings := make12Unsigned()
-	return impl.Encode(v, &settings)
+	toyfloat12u, _ := NewTypeX4(12, false)
+	return toyfloat12u.Encode(v)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Decode12U(x uint16) float64 {
-	settings := make12Unsigned()
-	return impl.Decode(x, &settings)
+	toyfloat12u, _ := NewTypeX4(12, false)
+	return toyfloat12u.Decode(x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Encode13(v float64) uint16 {
-	settings := make13()
-	return impl.Encode(v, &settings)
+	toyfloat13, _ := NewTypeX4(13, true)
+	return toyfloat13.Encode(v)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Decode13(x uint16) float64 {
-	settings := make13()
-	return impl.Decode(x, &settings)
+	toyfloat13, _ := NewTypeX4(13, true)
+	return toyfloat13.Decode(x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Encode14(v float64) uint16 {
-	settings := make14()
-	return impl.Encode(v, &settings)
+	toyfloat14, _ := NewTypeX4(14, true)
+	return toyfloat14.Encode(v)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Decode14(x uint16) float64 {
-	settings := make14()
-	return impl.Decode(x, &settings)
+	toyfloat14, _ := NewTypeX4(14, true)
+	return toyfloat14.Decode(x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Encode15X3(v float64) uint16 {
-	settings := make15X3()
-	return impl.Encode(v, &settings)
+	toyfloat15X3, _ := NewTypeX3(15, true)
+	return toyfloat15X3.Encode(v)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Decode15X3(x uint16) float64 {
-	settings := make15X3()
-	return impl.Decode(x, &settings)
+	toyfloat15X3, _ := NewTypeX3(15, true)
+	return toyfloat15X3.Decode(x)
 }
 
 // -----------
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func GetIntegerDelta12(last uint16, x uint16) int {
-	settings := make12()
-	return impl.EncodeDelta(last, x, &settings)
+	toyfloat12, _ := NewTypeX4(12, true)
+	return toyfloat12.GetIntegerDelta(last, x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func UseIntegerDelta12(last uint16, delta int) uint16 {
-	settings := make12()
-	return impl.DecodeDelta(last, delta, &settings)
+	toyfloat12, _ := NewTypeX4(12, true)
+	return toyfloat12.UseIntegerDelta(last, delta)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func GetIntegerDelta12U(last uint16, x uint16) int {
-	settings := make12Unsigned()
-	return impl.EncodeDelta(last, x, &settings)
+	toyfloat12u, _ := NewTypeX4(12, false)
+	return toyfloat12u.GetIntegerDelta(last, x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func UseIntegerDelta12U(last uint16, delta int) uint16 {
-	settings := make12Unsigned()
-	return impl.DecodeDelta(last, delta, &settings)
+	toyfloat12u, _ := NewTypeX4(12, false)
+	return toyfloat12u.UseIntegerDelta(last, delta)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func GetIntegerDelta13(last uint16, x uint16) int {
-	settings := make13()
-	return impl.EncodeDelta(last, x, &settings)
+	toyfloat13, _ := NewTypeX4(13, true)
+	return toyfloat13.GetIntegerDelta(last, x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func UseIntegerDelta13(last uint16, delta int) uint16 {
-	settings := make13()
-	return impl.DecodeDelta(last, delta, &settings)
+	toyfloat13, _ := NewTypeX4(13, true)
+	return toyfloat13.UseIntegerDelta(last, delta)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func GetIntegerDelta14(last uint16, x uint16) int {
-	settings := make14()
-	return impl.EncodeDelta(last, x, &settings)
+	toyfloat14, _ := NewTypeX4(14, true)
+	return toyfloat14.GetIntegerDelta(last, x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func UseIntegerDelta14(last uint16, delta int) uint16 {
-	settings := make14()
-	return impl.DecodeDelta(last, delta, &settings)
+	toyfloat14, _ := NewTypeX4(14, true)
+	return toyfloat14.UseIntegerDelta(last, delta)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func GetIntegerDelta15X3(last uint16, x uint16) int {
-	settings := make15X3()
-	return impl.EncodeDelta(last, x, &settings)
+	toyfloat15X3, _ := NewTypeX3(15, true)
+	return toyfloat15X3.GetIntegerDelta(last, x)
 }
 
+// Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func UseIntegerDelta15X3(last uint16, delta int) uint16 {
-	settings := make15X3()
-	return impl.DecodeDelta(last, delta, &settings)
+	toyfloat15X3, _ := NewTypeX3(15, true)
+	return toyfloat15X3.UseIntegerDelta(last, delta)
 }
