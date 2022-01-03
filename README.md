@@ -1,6 +1,6 @@
 # Toyfloat
 
-It encodes and decodes floating-point numbers with a width of 12 to 15 bits.
+It encodes and decodes floating-point numbers with a width of 4 to 16 bits.
 
 Expected applications:
 
@@ -35,40 +35,60 @@ package main
 import (
 	"fmt"
 	"github.com/georgy7/toyfloat"
+	"os"
 )
+
+func exitOnError(err error) {
+	if err != nil {
+		println("impossible type")
+		os.Exit(1)
+	}
+}
 
 func main() {
 	println()
 
-	tf := toyfloat.Encode12(0.345)
+	toyfloat12, err12 := toyfloat.NewTypeX4(12, true)
+	exitOnError(err12)
+
+	toyfloat13, err13 := toyfloat.NewTypeX4(13, true)
+	exitOnError(err13)
+
+	toyfloat14, err14 := toyfloat.NewTypeX4(14, true)
+	exitOnError(err14)
+
+	toyfloat15x3, err15x3 := toyfloat.NewTypeX3(15, true)
+	exitOnError(err15x3)
+
+	tf := toyfloat12.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f := toyfloat.Decode12(tf)
+	f := toyfloat12.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.Encode13(0.345)
+	tf = toyfloat13.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.Decode13(tf)
+	f = toyfloat13.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.Encode14(0.345)
+	tf = toyfloat14.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.Decode14(tf)
+	f = toyfloat14.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
-	tf = toyfloat.Encode15X3(0.345)
+	tf = toyfloat15x3.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
 
-	f = toyfloat.Decode15X3(tf)
+	f = toyfloat15x3.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
 	series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
-	previous := toyfloat.Encode12(series[0])
+	previous := toyfloat12.Encode(series[0])
 	for i := 1; i < len(series); i++ {
-		this := toyfloat.Encode12(series[i])
-		delta := toyfloat.GetIntegerDelta12(previous, this)
+		this := toyfloat12.Encode(series[i])
+		delta := toyfloat12.GetIntegerDelta(previous, this)
 		fmt.Printf("%d\n", delta)
 		previous = this
 	}

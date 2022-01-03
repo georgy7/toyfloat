@@ -47,15 +47,15 @@ func getToyfloatPositiveSample() []struct {
 // ------------------------
 
 func TestX3BadArguments(t *testing.T) {
-	for i := -10; i <= 4; i++ {
-		if i <= 4 {
+	for i := -10; i <= 20; i++ {
+		if (i <= 4) || (i > 16) {
 			_, e := NewTypeX3(i, true)
 			if e == nil {
 				t.Fatalf("length=%d must result in an error", i)
 			}
 		}
 
-		if i <= 3 {
+		if (i <= 3) || (i > 16) {
 			_, e := NewTypeX3(i, false)
 			if e == nil {
 				t.Fatalf("length=%d must result in an error (unsigned)", i)
@@ -65,15 +65,15 @@ func TestX3BadArguments(t *testing.T) {
 }
 
 func TestX4BadArguments(t *testing.T) {
-	for i := -10; i <= 4; i++ {
-		if i <= 5 {
+	for i := -10; i <= 20; i++ {
+		if (i <= 5) || (i > 16) {
 			_, e := NewTypeX4(i, true)
 			if e == nil {
 				t.Fatalf("length=%d must result in an error", i)
 			}
 		}
 
-		if i <= 4 {
+		if (i <= 4) || (i > 16) {
 			_, e := NewTypeX4(i, false)
 			if e == nil {
 				t.Fatalf("length=%d must result in an error (unsigned)", i)
@@ -1430,64 +1430,81 @@ func TestReadme(t *testing.T) {
 	const input = 0.345
 	const eps = 1e-6
 
+	toyfloat12, err12 := NewTypeX4(12, true)
+	if err12 != nil {
+		t.Fatal(err12)
+	}
+
+	toyfloat12u, err12u := NewTypeX4(12, false)
+	if err12u != nil {
+		t.Fatal(err12)
+	}
+
+	toyfloat13, err13 := NewTypeX4(13, true)
+	if err13 != nil {
+		t.Fatal(err13)
+	}
+
+	toyfloat14, err14 := NewTypeX4(14, true)
+	if err14 != nil {
+		t.Fatal(err14)
+	}
+
+	toyfloat15x3, err15x3 := NewTypeX3(15, true)
+	if err15x3 != nil {
+		t.Fatal(err15x3)
+	}
+
 	{
-		tf := Encode12(input)
+		tf := toyfloat12.Encode(input)
 		if tf != 0x332 {
 			t.Fatalf("Incorrect encoded: 0x%X (12-bit)\n", tf)
 		}
 
-		result := Decode12(tf)
+		result := toyfloat12.Decode(tf)
 		if math.Abs(result-0.345098) > eps {
 			t.Fatalf("Incorrect decoded: %f (12-bit)\n", result)
 		}
 	}
 
 	{
-		tf := Encode12U(input)
+		tf := toyfloat12u.Encode(input)
 		if tf != 0x664 {
 			t.Fatalf("Incorrect encoded: 0x%X (12-bit unsigned)\n", tf)
 		}
 	}
 
 	{
-		tf := Encode13(input)
+		tf := toyfloat13.Encode(input)
 		if tf != 0x664 {
 			t.Fatalf("Incorrect encoded: 0x%X (13-bit)\n", tf)
 		}
 
-		result := Decode13(tf)
+		result := toyfloat13.Decode(tf)
 		if math.Abs(result-0.345098) > eps {
 			t.Fatalf("Incorrect decoded: %f (13-bit)\n", result)
 		}
 	}
 
 	{
-		tf := Encode14(input)
+		tf := toyfloat14.Encode(input)
 		if tf != 0xCC8 {
 			t.Fatalf("Incorrect encoded: 0x%X (14-bit)\n", tf)
 		}
 
-		result := Decode14(tf)
+		result := toyfloat14.Decode(tf)
 		if math.Abs(result-0.345098) > eps {
 			t.Fatalf("Incorrect decoded: %f (14-bit)\n", result)
 		}
 	}
 
 	{
-		tf := Encode15X3(input)
+		tf := toyfloat15x3.Encode(input)
 		if tf != 0x235E {
 			t.Fatalf("Incorrect encoded: 0x%X (15x3)\n", tf)
 		}
 
-		result := Decode15X3(tf)
-		if math.Abs(result-0.344990) > eps {
-			t.Fatalf("Incorrect decoded: %f (15x3)\n", result)
-		}
-	}
-
-	{
-		tf := Encode15X3(input)
-		result := Decode15X3(tf)
+		result := toyfloat15x3.Decode(tf)
 		if math.Abs(result-0.344990) > eps {
 			t.Fatalf("Incorrect decoded: %f (15x3)\n", result)
 		}
@@ -1497,11 +1514,11 @@ func TestReadme(t *testing.T) {
 		series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
 		expected := []int{387, 414, 12, -2, 12, 1, -5}
 
-		previous := Encode12(series[0])
+		previous := toyfloat12.Encode(series[0])
 		for i := 1; i < len(series); i++ {
-			this := Encode12(series[i])
+			this := toyfloat12.Encode(series[i])
 
-			delta := GetIntegerDelta12(previous, this)
+			delta := toyfloat12.GetIntegerDelta(previous, this)
 			expectedDelta := expected[i-1]
 
 			if delta != expectedDelta {

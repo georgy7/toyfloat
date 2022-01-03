@@ -100,17 +100,26 @@ def make_comparison(result_fn):
     figure.set_size_inches(5.6, 5.5)
     plt.subplots_adjust(left=0.162, bottom=0.129, right=0.954, top=0.954)
 
+    values, precision = get_comparison_data('precision8x3.tsv', minPowerX10=-20, maxPowerX10=8)
+    plt.plot(values, precision, '-', label='8x3')
+
     values, precision = get_comparison_data('precision12.tsv')
-    plt.plot(values, precision, 'o-', label='12')
+    plt.plot(values, precision, '-', label='12')
 
     values, precision = get_comparison_data('precision13.tsv')
-    plt.plot(values, precision, 'o-', label='12u / 13')
+    plt.plot(values, precision, '-', label='12u / 13')
 
     values, precision = get_comparison_data('precision14.tsv')
-    plt.plot(values, precision, 'o-', label='14')
+    plt.plot(values, precision, '-', label='14')
 
     values, precision = get_comparison_data('precision15x3.tsv', minPowerX10=-20, maxPowerX10=8)
-    plt.plot(values, precision, 'o-', label='15x3')
+    plt.plot(values, precision, '-', label='15x3')
+
+    values, precision = get_comparison_data('precision16u.tsv')
+    plt.plot(values, precision, '-', label='16u')
+
+    values, precision = get_comparison_data('precision16x3u.tsv', minPowerX10=-20, maxPowerX10=8)
+    plt.plot(values, precision, '-', label='16x3u')
 
     ax.legend()
 
@@ -123,5 +132,10 @@ if __name__ == "__main__":
     make_image('precision13.tsv', 'precision13.png')
     make_image('precision14.tsv', 'precision14.png')
     make_image('precision15x3.tsv', 'precision15x3.png')
+    make_image('precision8x3.tsv', 'precision8x3.png')
+    make_image('precision4x3u.tsv', 'precision4x3u.png')
+    make_image('precision16.tsv', 'precision16.png')
+    make_image('precision16u.tsv', 'precision16u.png')
+    make_image('precision16x3u.tsv', 'precision16x3u.png')
 
     make_comparison('comparison.png')
