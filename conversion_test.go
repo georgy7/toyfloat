@@ -1455,6 +1455,11 @@ func TestReadme(t *testing.T) {
 		t.Fatal(err15x3)
 	}
 
+	toyfloat5x3, err5x3 := NewTypeX3(5, true)
+	if err5x3 != nil {
+		t.Fatal(err5x3)
+	}
+
 	{
 		tf := toyfloat12.Encode(input)
 		if tf != 0x332 {
@@ -1507,6 +1512,18 @@ func TestReadme(t *testing.T) {
 		result := toyfloat15x3.Decode(tf)
 		if math.Abs(result-0.344990) > eps {
 			t.Fatalf("Incorrect decoded: %f (15x3)\n", result)
+		}
+	}
+
+	{
+		tf := toyfloat5x3.Encode(input)
+		if tf != 0b1001 {
+			t.Fatalf("Incorrect encoded: 0x%b (5x3)\n", tf)
+		}
+
+		result := toyfloat5x3.Decode(tf)
+		if math.Abs(result-0.365079) > eps {
+			t.Fatalf("Incorrect decoded: %f (5x3)\n", result)
 		}
 	}
 

@@ -60,28 +60,32 @@ func main() {
 	toyfloat15x3, err15x3 := toyfloat.NewTypeX3(15, true)
 	exitOnError(err15x3)
 
+	toyfloat5x3, err5x3 := toyfloat.NewTypeX3(5, true)
+	exitOnError(err5x3)
+
 	tf := toyfloat12.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
-
 	f := toyfloat12.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
 	tf = toyfloat13.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
-
 	f = toyfloat13.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
 	tf = toyfloat14.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
-
 	f = toyfloat14.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
 	tf = toyfloat15x3.Encode(0.345)
 	fmt.Printf("0x%X\n", tf)
-
 	f = toyfloat15x3.Decode(tf)
+	fmt.Printf("%f\n\n", f)
+
+	tf = toyfloat5x3.Encode(0.345)
+	fmt.Printf("0b%b\n", tf)
+	f = toyfloat5x3.Decode(tf)
 	fmt.Printf("%f\n\n", f)
 
 	series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
@@ -112,6 +116,9 @@ go run example.go
 
 0x235E
 0.344990
+
+0b1001
+0.365079
 
 387
 414

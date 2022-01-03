@@ -49,6 +49,10 @@ func MakeSettings(mSize int, minus, mMask uint16, xc XConstants) Settings {
 }
 
 func NewSettings(length int, xc XConstants, signed bool) (Settings, error) {
+	if length > 16 {
+		return Settings{}, errors.New("maximum length is 16 bits")
+	}
+
 	mSize := length - xc.xSize
 	if signed {
 		mSize -= 1
