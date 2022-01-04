@@ -82,13 +82,33 @@ func TestX4BadArguments(t *testing.T) {
 	}
 }
 
+func makeTypeX3(length int, signed bool, t *testing.T) Type {
+	tfType, err := NewTypeX3(length, signed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return tfType
+}
+
+func makeTypeX4(length int, signed bool, t *testing.T) Type {
+	tfType, err := NewTypeX4(length, signed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return tfType
+}
+
 // ------------------------
 
 func Test12Zero(t *testing.T) {
-	tf := Encode12(0)
+	toyfloat12 := makeTypeX4(12, true, t)
+
+	tf := toyfloat12.Encode(0)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12(tf)
+	result := toyfloat12.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -96,10 +116,12 @@ func Test12Zero(t *testing.T) {
 }
 
 func Test12PlusOne(t *testing.T) {
-	tf := Encode12(1)
+	toyfloat12 := makeTypeX4(12, true, t)
+
+	tf := toyfloat12.Encode(1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12(tf)
+	result := toyfloat12.Decode(tf)
 
 	if result != 1 {
 		t.Fatalf("%f != 1", result)
@@ -107,10 +129,12 @@ func Test12PlusOne(t *testing.T) {
 }
 
 func Test12MinusOne(t *testing.T) {
-	tf := Encode12(-1)
+	toyfloat12 := makeTypeX4(12, true, t)
+
+	tf := toyfloat12.Encode(-1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12(tf)
+	result := toyfloat12.Decode(tf)
 
 	if result != -1 {
 		t.Fatalf("%f != -1", result)
@@ -118,14 +142,16 @@ func Test12MinusOne(t *testing.T) {
 }
 
 func Test12PositiveOverflow(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+
 	const expected = 255.99607843137255
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected + float64(i)
-		tf := Encode12(v)
+		tf := toyfloat12.Encode(v)
 
-		result := Decode12(tf)
+		result := toyfloat12.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -135,14 +161,16 @@ func Test12PositiveOverflow(t *testing.T) {
 }
 
 func Test12NegativeOverflow(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+
 	const expected = -255.99607843137255
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected - float64(i)
-		tf := Encode12(v)
+		tf := toyfloat12.Encode(v)
 
-		result := Decode12(tf)
+		result := toyfloat12.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -152,13 +180,15 @@ func Test12NegativeOverflow(t *testing.T) {
 }
 
 func Test12PositiveInfinity(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+
 	const expected = 255.99607843137255
 	const eps = 0.0001
 
 	v := math.Inf(+1)
-	tf := Encode12(v)
+	tf := toyfloat12.Encode(v)
 
-	result := Decode12(tf)
+	result := toyfloat12.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -167,13 +197,15 @@ func Test12PositiveInfinity(t *testing.T) {
 }
 
 func Test12NegativeInfinity(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+
 	const expected = -255.99607843137255
 	const eps = 0.0001
 
 	v := math.Inf(-1)
-	tf := Encode12(v)
+	tf := toyfloat12.Encode(v)
 
-	result := Decode12(tf)
+	result := toyfloat12.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -182,10 +214,12 @@ func Test12NegativeInfinity(t *testing.T) {
 }
 
 func Test12NaNConvertedToZero(t *testing.T) {
-	tf := Encode12(math.NaN())
+	toyfloat12 := makeTypeX4(12, true, t)
+
+	tf := toyfloat12.Encode(math.NaN())
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12(tf)
+	result := toyfloat12.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -193,11 +227,13 @@ func Test12NaNConvertedToZero(t *testing.T) {
 }
 
 func Test12Precision(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+
 	tests := getToyfloatPositiveSample()
 
 	for _, tt := range tests {
-		toy := Encode12(tt.number)
-		result := Decode12(toy)
+		toy := toyfloat12.Encode(tt.number)
+		result := toyfloat12.Decode(toy)
 
 		diff := math.Abs(result - tt.number)
 		if diff > tt.precision {
@@ -207,8 +243,8 @@ func Test12Precision(t *testing.T) {
 
 	for _, tt := range tests {
 		negative := -tt.number
-		toy := Encode12(negative)
-		result := Decode12(toy)
+		toy := toyfloat12.Encode(negative)
+		result := toyfloat12.Decode(toy)
 
 		diff := math.Abs(result - negative)
 		if diff > tt.precision {
@@ -218,9 +254,11 @@ func Test12Precision(t *testing.T) {
 }
 
 func Test12IgnoringMostSignificantBits(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+
 	for f := -255.0; f <= 255.0; f += 0.01 {
-		toy := Encode12(f)
-		original := Decode12(toy)
+		toy := toyfloat12.Encode(f)
+		original := toyfloat12.Decode(toy)
 
 		if 0xF000&toy != 0x0 {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
@@ -229,7 +267,7 @@ func Test12IgnoringMostSignificantBits(t *testing.T) {
 		for m := 0x1; m <= 0xF; m++ {
 			modification := uint16(m) << 12
 			toyModified := toy | modification
-			modified := Decode12(toyModified)
+			modified := toyfloat12.Decode(toyModified)
 
 			if toy == toyModified {
 				t.Fatalf("This test is broken. "+
@@ -258,16 +296,6 @@ func BenchmarkFloat64Increment(b *testing.B) {
 }
 
 func BenchmarkDecodeEncodeIncrement(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		one := 1.0
-		counter := Encode12(0.0)
-		for x := 0; x < 100000; x++ {
-			counter = Encode12(Decode12(counter) + one)
-		}
-	}
-}
-
-func BenchmarkDecodeEncodeIncrementCustomType(b *testing.B) {
 	toyfloat12, e := NewTypeX4(12, true)
 	if e != nil {
 		b.Fatal(e)
@@ -285,11 +313,13 @@ func BenchmarkDecodeEncodeIncrementCustomType(b *testing.B) {
 // ------------------------
 
 func TestUnsigned12Precision(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+
 	tests := getToyfloatPositiveSample()
 
 	for _, tt := range tests {
-		toy := Encode12U(tt.number)
-		result := Decode12U(toy)
+		toy := toyfloat12u.Encode(tt.number)
+		result := toyfloat12u.Decode(toy)
 
 		diff := math.Abs(result - tt.number)
 		if diff > tt.precision*0.5 {
@@ -299,12 +329,14 @@ func TestUnsigned12Precision(t *testing.T) {
 }
 
 func TestUnsigned12NegativeInput(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+
 	tests := getToyfloatPositiveSample()
 
 	for _, tt := range tests {
 		negative := -tt.number
-		toy := Encode12U(negative)
-		result := Decode12U(toy)
+		toy := toyfloat12u.Encode(negative)
+		result := toyfloat12u.Decode(toy)
 
 		if result != 0 {
 			t.Fatalf("%f != 0", result)
@@ -313,10 +345,12 @@ func TestUnsigned12NegativeInput(t *testing.T) {
 }
 
 func TestUnsigned12Zero(t *testing.T) {
-	tf := Encode12U(0)
+	toyfloat12u := makeTypeX4(12, false, t)
+
+	tf := toyfloat12u.Encode(0)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12U(tf)
+	result := toyfloat12u.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -324,10 +358,12 @@ func TestUnsigned12Zero(t *testing.T) {
 }
 
 func TestUnsigned12PlusOne(t *testing.T) {
-	tf := Encode12U(1)
+	toyfloat12u := makeTypeX4(12, false, t)
+
+	tf := toyfloat12u.Encode(1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12U(tf)
+	result := toyfloat12u.Decode(tf)
 
 	if result != 1 {
 		t.Fatalf("%f != 1", result)
@@ -335,14 +371,16 @@ func TestUnsigned12PlusOne(t *testing.T) {
 }
 
 func TestUnsigned12PositiveOverflow(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+
 	const expected = 256.4980392156863
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected + float64(i)
-		tf := Encode12U(v)
+		tf := toyfloat12u.Encode(v)
 
-		result := Decode12U(tf)
+		result := toyfloat12u.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -352,13 +390,15 @@ func TestUnsigned12PositiveOverflow(t *testing.T) {
 }
 
 func TestUnsigned12PositiveInfinity(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+
 	const expected = 256.4980392156863
 	const eps = 0.0001
 
 	v := math.Inf(+1)
-	tf := Encode12U(v)
+	tf := toyfloat12u.Encode(v)
 
-	result := Decode12U(tf)
+	result := toyfloat12u.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -367,10 +407,12 @@ func TestUnsigned12PositiveInfinity(t *testing.T) {
 }
 
 func TestUnsigned12NegativeInfinity(t *testing.T) {
-	v := math.Inf(-1)
-	tf := Encode12U(v)
+	toyfloat12u := makeTypeX4(12, false, t)
 
-	result := Decode12U(tf)
+	v := math.Inf(-1)
+	tf := toyfloat12u.Encode(v)
+
+	result := toyfloat12u.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0, encoded: 0b%b", result, tf)
@@ -378,10 +420,12 @@ func TestUnsigned12NegativeInfinity(t *testing.T) {
 }
 
 func TestUnsigned12NaNConvertedToZero(t *testing.T) {
-	tf := Encode12U(math.NaN())
+	toyfloat12u := makeTypeX4(12, false, t)
+
+	tf := toyfloat12u.Encode(math.NaN())
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode12U(tf)
+	result := toyfloat12u.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -389,9 +433,11 @@ func TestUnsigned12NaNConvertedToZero(t *testing.T) {
 }
 
 func TestUnsigned12IgnoringMostSignificantByte(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+
 	for f := -255.0; f <= 255.0; f += 0.01 {
-		toy := Encode12U(f)
-		original := Decode12U(toy)
+		toy := toyfloat12u.Encode(f)
+		original := toyfloat12u.Decode(toy)
 
 		if 0xF000&toy != 0x0 {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
@@ -400,7 +446,7 @@ func TestUnsigned12IgnoringMostSignificantByte(t *testing.T) {
 		for m := 0x1; m < 0xF; m++ {
 			modification := uint16(m) << 12
 			toyModified := toy | modification
-			modified := Decode12U(toyModified)
+			modified := toyfloat12u.Decode(toyModified)
 
 			if toy == toyModified {
 				t.Fatalf("This test is broken. "+
@@ -419,11 +465,13 @@ func TestUnsigned12IgnoringMostSignificantByte(t *testing.T) {
 // ------------------------
 
 func Test13Precision(t *testing.T) {
+	toyfloat13 := makeTypeX4(13, true, t)
+
 	tests := getToyfloatPositiveSample()
 
 	for _, tt := range tests {
-		toy := Encode13(tt.number)
-		result := Decode13(toy)
+		toy := toyfloat13.Encode(tt.number)
+		result := toyfloat13.Decode(toy)
 
 		diff := math.Abs(result - tt.number)
 		if diff > tt.precision*0.5 {
@@ -433,8 +481,8 @@ func Test13Precision(t *testing.T) {
 
 	for _, tt := range tests {
 		negative := -tt.number
-		toy := Encode13(negative)
-		result := Decode13(toy)
+		toy := toyfloat13.Encode(negative)
+		result := toyfloat13.Decode(toy)
 
 		diff := math.Abs(result - negative)
 		if diff > tt.precision*0.5 {
@@ -444,10 +492,12 @@ func Test13Precision(t *testing.T) {
 }
 
 func Test13Zero(t *testing.T) {
-	tf := Encode13(0)
+	toyfloat13 := makeTypeX4(13, true, t)
+
+	tf := toyfloat13.Encode(0)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode13(tf)
+	result := toyfloat13.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -455,10 +505,12 @@ func Test13Zero(t *testing.T) {
 }
 
 func Test13PlusOne(t *testing.T) {
-	tf := Encode13(1)
+	toyfloat13 := makeTypeX4(13, true, t)
+
+	tf := toyfloat13.Encode(1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode13(tf)
+	result := toyfloat13.Decode(tf)
 
 	if result != 1 {
 		t.Fatalf("%f != 1", result)
@@ -466,10 +518,12 @@ func Test13PlusOne(t *testing.T) {
 }
 
 func Test13MinusOne(t *testing.T) {
-	tf := Encode13(-1)
+	toyfloat13 := makeTypeX4(13, true, t)
+
+	tf := toyfloat13.Encode(-1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode13(tf)
+	result := toyfloat13.Decode(tf)
 
 	if result != -1 {
 		t.Fatalf("%f != -1", result)
@@ -477,14 +531,16 @@ func Test13MinusOne(t *testing.T) {
 }
 
 func Test13PositiveOverflow(t *testing.T) {
+	toyfloat13 := makeTypeX4(13, true, t)
+
 	const expected = 256.4980392156863
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected + float64(i)
-		tf := Encode13(v)
+		tf := toyfloat13.Encode(v)
 
-		result := Decode13(tf)
+		result := toyfloat13.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -494,14 +550,16 @@ func Test13PositiveOverflow(t *testing.T) {
 }
 
 func Test13NegativeOverflow(t *testing.T) {
+	toyfloat13 := makeTypeX4(13, true, t)
+
 	const expected = -256.4980392156863
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected - float64(i)
-		tf := Encode13(v)
+		tf := toyfloat13.Encode(v)
 
-		result := Decode13(tf)
+		result := toyfloat13.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -511,13 +569,15 @@ func Test13NegativeOverflow(t *testing.T) {
 }
 
 func Test13PositiveInfinity(t *testing.T) {
+	toyfloat13 := makeTypeX4(13, true, t)
+
 	const expected = 256.4980392156863
 	const eps = 0.0001
 
 	v := math.Inf(+1)
-	tf := Encode13(v)
+	tf := toyfloat13.Encode(v)
 
-	result := Decode13(tf)
+	result := toyfloat13.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -526,13 +586,15 @@ func Test13PositiveInfinity(t *testing.T) {
 }
 
 func Test13NegativeInfinity(t *testing.T) {
+	toyfloat13 := makeTypeX4(13, true, t)
+
 	const expected = -256.4980392156863
 	const eps = 0.0001
 
 	v := math.Inf(-1)
-	tf := Encode13(v)
+	tf := toyfloat13.Encode(v)
 
-	result := Decode13(tf)
+	result := toyfloat13.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -541,10 +603,12 @@ func Test13NegativeInfinity(t *testing.T) {
 }
 
 func Test13NaNConvertedToZero(t *testing.T) {
-	tf := Encode13(math.NaN())
+	toyfloat13 := makeTypeX4(13, true, t)
+
+	tf := toyfloat13.Encode(math.NaN())
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode13(tf)
+	result := toyfloat13.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -552,9 +616,11 @@ func Test13NaNConvertedToZero(t *testing.T) {
 }
 
 func Test13IgnoringMostSignificantBits(t *testing.T) {
+	toyfloat13 := makeTypeX4(13, true, t)
+
 	for f := -255.0; f <= 255.0; f += 0.01 {
-		toy := Encode13(f)
-		original := Decode13(toy)
+		toy := toyfloat13.Encode(f)
+		original := toyfloat13.Decode(toy)
 
 		if 0b1110_0000_0000_0000&toy != 0x0 {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
@@ -563,7 +629,7 @@ func Test13IgnoringMostSignificantBits(t *testing.T) {
 		for m := 0b1; m <= 0b111; m++ {
 			modification := uint16(m) << 13
 			toyModified := toy | modification
-			modified := Decode13(toyModified)
+			modified := toyfloat13.Decode(toyModified)
 
 			if toy == toyModified {
 				t.Fatalf("This test is broken. "+
@@ -582,11 +648,13 @@ func Test13IgnoringMostSignificantBits(t *testing.T) {
 // ------------------------
 
 func Test14Precision(t *testing.T) {
+	toyfloat14 := makeTypeX4(14, true, t)
+
 	tests := getToyfloatPositiveSample()
 
 	for _, tt := range tests {
-		toy := Encode14(tt.number)
-		result := Decode14(toy)
+		toy := toyfloat14.Encode(tt.number)
+		result := toyfloat14.Decode(toy)
 
 		diff := math.Abs(result - tt.number)
 		if diff > tt.precision*0.25 {
@@ -596,8 +664,8 @@ func Test14Precision(t *testing.T) {
 
 	for _, tt := range tests {
 		negative := -tt.number
-		toy := Encode14(negative)
-		result := Decode14(toy)
+		toy := toyfloat14.Encode(negative)
+		result := toyfloat14.Decode(toy)
 
 		diff := math.Abs(result - negative)
 		if diff > tt.precision*0.25 {
@@ -607,9 +675,11 @@ func Test14Precision(t *testing.T) {
 }
 
 func Test14IgnoringMostSignificantBits(t *testing.T) {
+	toyfloat14 := makeTypeX4(14, true, t)
+
 	for f := -255.0; f <= 255.0; f += 0.01 {
-		toy := Encode14(f)
-		original := Decode14(toy)
+		toy := toyfloat14.Encode(f)
+		original := toyfloat14.Decode(toy)
 
 		if 0b1100_0000_0000_0000&toy != 0x0 {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
@@ -618,7 +688,7 @@ func Test14IgnoringMostSignificantBits(t *testing.T) {
 		for m := 0b01; m <= 0b11; m++ {
 			modification := uint16(m) << 14
 			toyModified := toy | modification
-			modified := Decode14(toyModified)
+			modified := toyfloat14.Decode(toyModified)
 
 			if toy == toyModified {
 				t.Fatalf("This test is broken. "+
@@ -637,6 +707,8 @@ func Test14IgnoringMostSignificantBits(t *testing.T) {
 // ------------------------
 
 func Test15X3Precision(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	tests := getToyfloatPositiveSample()
 
 	fixPrecision := func(number, precision float64) float64 {
@@ -649,8 +721,8 @@ func Test15X3Precision(t *testing.T) {
 
 	for _, tt := range tests {
 		if tt.number <= 4.0 {
-			toy := Encode15X3(tt.number)
-			result := Decode15X3(toy)
+			toy := toyfloat15x3.Encode(tt.number)
+			result := toyfloat15x3.Decode(toy)
 
 			diff := math.Abs(result - tt.number)
 			if diff > fixPrecision(tt.number, tt.precision) {
@@ -662,8 +734,8 @@ func Test15X3Precision(t *testing.T) {
 	for _, tt := range tests {
 		if tt.number <= 4.0 {
 			negative := -tt.number
-			toy := Encode15X3(negative)
-			result := Decode15X3(toy)
+			toy := toyfloat15x3.Encode(negative)
+			result := toyfloat15x3.Decode(toy)
 
 			diff := math.Abs(result - negative)
 			if diff > fixPrecision(tt.number, tt.precision) {
@@ -674,10 +746,12 @@ func Test15X3Precision(t *testing.T) {
 }
 
 func Test15X3Zero(t *testing.T) {
-	tf := Encode15X3(0)
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
+	tf := toyfloat15x3.Encode(0)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode15X3(tf)
+	result := toyfloat15x3.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -685,10 +759,12 @@ func Test15X3Zero(t *testing.T) {
 }
 
 func Test15X3PlusOne(t *testing.T) {
-	tf := Encode15X3(1)
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
+	tf := toyfloat15x3.Encode(1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode15X3(tf)
+	result := toyfloat15x3.Decode(tf)
 
 	if result != 1 {
 		t.Fatalf("%f != 1", result)
@@ -696,10 +772,12 @@ func Test15X3PlusOne(t *testing.T) {
 }
 
 func Test15X3MinusOne(t *testing.T) {
-	tf := Encode15X3(-1)
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
+	tf := toyfloat15x3.Encode(-1)
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode15X3(tf)
+	result := toyfloat15x3.Decode(tf)
 
 	if result != -1 {
 		t.Fatalf("%f != -1", result)
@@ -707,14 +785,16 @@ func Test15X3MinusOne(t *testing.T) {
 }
 
 func Test15X3PositiveOverflow(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	const expected = 4.046627
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected + float64(i)
-		tf := Encode15X3(v)
+		tf := toyfloat15x3.Encode(v)
 
-		result := Decode15X3(tf)
+		result := toyfloat15x3.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -724,14 +804,16 @@ func Test15X3PositiveOverflow(t *testing.T) {
 }
 
 func Test15X3NegativeOverflow(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	const expected = -4.046627
 	const eps = 0.0001
 
 	for i := 0; i < 1000; i++ {
 		v := expected - float64(i)
-		tf := Encode15X3(v)
+		tf := toyfloat15x3.Encode(v)
 
-		result := Decode15X3(tf)
+		result := toyfloat15x3.Decode(tf)
 
 		if math.Abs(result-expected) > eps {
 			t.Logf("Encoded: 0b%b", tf)
@@ -741,13 +823,15 @@ func Test15X3NegativeOverflow(t *testing.T) {
 }
 
 func Test15X3PositiveInfinity(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	const expected = 4.046627
 	const eps = 0.0001
 
 	v := math.Inf(+1)
-	tf := Encode15X3(v)
+	tf := toyfloat15x3.Encode(v)
 
-	result := Decode15X3(tf)
+	result := toyfloat15x3.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -756,13 +840,15 @@ func Test15X3PositiveInfinity(t *testing.T) {
 }
 
 func Test15X3NegativeInfinity(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	const expected = -4.046627
 	const eps = 0.0001
 
 	v := math.Inf(-1)
-	tf := Encode15X3(v)
+	tf := toyfloat15x3.Encode(v)
 
-	result := Decode15X3(tf)
+	result := toyfloat15x3.Decode(tf)
 
 	if math.Abs(result-expected) > eps {
 		t.Logf("Encoded: 0b%b", tf)
@@ -771,10 +857,12 @@ func Test15X3NegativeInfinity(t *testing.T) {
 }
 
 func Test15X3NaNConvertedToZero(t *testing.T) {
-	tf := Encode15X3(math.NaN())
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
+	tf := toyfloat15x3.Encode(math.NaN())
 	t.Logf("Encoded: 0b%b", tf)
 
-	result := Decode15X3(tf)
+	result := toyfloat15x3.Decode(tf)
 
 	if result != 0 {
 		t.Fatalf("%f != 0", result)
@@ -782,9 +870,11 @@ func Test15X3NaNConvertedToZero(t *testing.T) {
 }
 
 func Test15X3IgnoringMostSignificantBits(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	for f := -255.0; f <= 255.0; f += 0.01 {
-		toy := Encode15X3(f)
-		original := Decode15X3(toy)
+		toy := toyfloat15x3.Encode(f)
+		original := toyfloat15x3.Decode(toy)
 
 		if 0b1000_0000_0000_0000&toy != 0x0 {
 			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
@@ -793,7 +883,7 @@ func Test15X3IgnoringMostSignificantBits(t *testing.T) {
 		m := 0b1
 		modification := uint16(m) << 15
 		toyModified := toy | modification
-		modified := Decode15X3(toyModified)
+		modified := toyfloat15x3.Decode(toyModified)
 
 		if toy == toyModified {
 			t.Fatalf("This test is broken. "+
@@ -811,10 +901,12 @@ func Test15X3IgnoringMostSignificantBits(t *testing.T) {
 // ------------------------
 
 func TestEncodeDecodeStability(t *testing.T) {
-	tf := Encode15X3(0.6)
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
+	tf := toyfloat15x3.Encode(0.6)
 	t.Logf("Encoded: 0b%b", tf)
 
-	input := Decode15X3(tf)
+	input := toyfloat15x3.Decode(tf)
 	t.Logf("Decoded: %f", input)
 
 	temp := input
@@ -824,9 +916,9 @@ func TestEncodeDecodeStability(t *testing.T) {
 			t.Fatalf("#%d: %f != %f", i, temp, input)
 		}
 
-		tfTemp := Encode15X3(temp)
+		tfTemp := toyfloat15x3.Encode(temp)
 		t.Logf("Encoded: 0b%b", tfTemp)
-		temp = Decode15X3(tfTemp)
+		temp = toyfloat15x3.Decode(tfTemp)
 		t.Logf("Decoded: %f", temp)
 	}
 }
@@ -834,6 +926,8 @@ func TestEncodeDecodeStability(t *testing.T) {
 // ------------------------
 
 func TestUseDelta15X3(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+
 	const eps060 = 0.00024   // x = -1
 	const eps030 = 0.00012   // x = -2
 	const eps013 = 0.00006   // x = -3
@@ -844,12 +938,12 @@ func TestUseDelta15X3(t *testing.T) {
 	b := 1 / (1 - a)
 	twoPowerM := math.Pow(2, 11)
 
-	last := Decode15X3(Encode15X3(0.6))
-	lastTf := Encode15X3(last)
+	last := toyfloat15x3.Decode(toyfloat15x3.Encode(0.6))
+	lastTf := toyfloat15x3.Encode(last)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf := UseIntegerDelta15X3(lastTf, 0)
-	result := Decode15X3(resultTf)
+	resultTf := toyfloat15x3.UseIntegerDelta(lastTf, 0)
+	result := toyfloat15x3.Decode(resultTf)
 	expected := last
 
 	if math.Abs(result-expected) > eps060 {
@@ -857,8 +951,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, 1)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, 1)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last + ((1.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -866,8 +960,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -1)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -1)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last - ((1.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -875,8 +969,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, 123)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, 123)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last + ((123.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -884,8 +978,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -123)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -123)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last - ((123.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -893,8 +987,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	last = Decode15X3(Encode15X3(0.3))
-	lastTf = Encode15X3(last)
+	last = toyfloat15x3.Decode(toyfloat15x3.Encode(0.3))
+	lastTf = toyfloat15x3.Encode(last)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
 	mantissa := lastTf & 0b11111111111
@@ -902,28 +996,28 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("This test is probably broken: mantissa equals %d.", mantissa)
 	}
 
-	result = Decode15X3(UseIntegerDelta15X3(lastTf, 0))
+	result = toyfloat15x3.Decode(toyfloat15x3.UseIntegerDelta(lastTf, 0))
 	expected = last
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode15X3(UseIntegerDelta15X3(lastTf, 2047-499))
+	result = toyfloat15x3.Decode(toyfloat15x3.UseIntegerDelta(lastTf, 2047-499))
 	expected = last + (((2047.0-499.0)/twoPowerM)*0.25)*b
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode15X3(UseIntegerDelta15X3(lastTf, -499))
+	result = toyfloat15x3.Decode(toyfloat15x3.UseIntegerDelta(lastTf, -499))
 	expected = last - ((499.0/twoPowerM)*0.25)*b
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode15X3(UseIntegerDelta15X3(lastTf, 2047-499+1))
+	result = toyfloat15x3.Decode(toyfloat15x3.UseIntegerDelta(lastTf, 2047-499+1))
 	expected = last +
 		(((2047.0-499.0)/twoPowerM)*0.25)*b +
 		((1.0/twoPowerM)*0.5)*b
@@ -932,7 +1026,7 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode15X3(UseIntegerDelta15X3(lastTf, -500))
+	result = toyfloat15x3.Decode(toyfloat15x3.UseIntegerDelta(lastTf, -500))
 	expected = last -
 		((499.0/twoPowerM)*0.25)*b -
 		((1.0/twoPowerM)*0.125)*b
@@ -942,11 +1036,11 @@ func TestUseDelta15X3(t *testing.T) {
 	}
 
 	lastTf = 0b0
-	last = Decode15X3(lastTf)
+	last = toyfloat15x3.Decode(lastTf)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf = UseIntegerDelta15X3(lastTf, 0)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, 0)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last
 
 	if math.Abs(result-expected) > epsMin {
@@ -954,8 +1048,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, 1)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, 1)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last + ((1.0/twoPowerM)*0.015625)*b
 
 	if math.Abs(result-expected) > epsMin {
@@ -963,8 +1057,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -1)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -1)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = -last // minus zero
 
 	if math.Abs(result-expected) > epsMin {
@@ -973,14 +1067,14 @@ func TestUseDelta15X3(t *testing.T) {
 	}
 
 	// and back
-	minusBit := Encode15X3(1) ^ Encode15X3(-1)
+	minusBit := toyfloat15x3.Encode(1) ^ toyfloat15x3.Encode(-1)
 	t.Logf("Minus bit: 0b%b", minusBit)
 	lastTf = minusBit | 0b0
-	last = Decode15X3(lastTf)
+	last = toyfloat15x3.Decode(lastTf)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf = UseIntegerDelta15X3(lastTf, 1)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, 1)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = -last // plus zero
 
 	if math.Abs(result-expected) > epsMin {
@@ -988,8 +1082,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -10)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -10)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = last - ((10.0/twoPowerM)*0.015625)*b
 
 	if math.Abs(result-expected) > epsMin {
@@ -999,8 +1093,8 @@ func TestUseDelta15X3(t *testing.T) {
 
 	// big deltas
 
-	resultTf = UseIntegerDelta15X3(lastTf, 234234)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, 234234)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = ((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
 	if math.Abs(result-expected) > epsMax {
@@ -1008,8 +1102,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -16382)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -16382)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = -((1.0+(twoPowerM-2)/twoPowerM)*2 - a) * b
 
 	if math.Abs(result-expected) > epsMax {
@@ -1017,8 +1111,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -16383)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -16383)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
 	if math.Abs(result-expected) > epsMax {
@@ -1026,8 +1120,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -16384)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -16384)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
 	if math.Abs(result-expected) > epsMax {
@@ -1035,8 +1129,8 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta15X3(lastTf, -26384)
-	result = Decode15X3(resultTf)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, -26384)
+	result = toyfloat15x3.Decode(resultTf)
 	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
 
 	if math.Abs(result-expected) > epsMax {
@@ -1052,15 +1146,16 @@ func TestGetDelta15X3(t *testing.T) {
 
 	const eps = 1e-9
 
-	last := Encode15X3(start)
+	toyfloat15x3 := makeTypeX3(15, true, t)
+	last := toyfloat15x3.Encode(start)
 
 	for x := start + step; x <= stop; x += step {
-		xtf := Encode15X3(x)
-		expected := Decode15X3(xtf)
+		xtf := toyfloat15x3.Encode(x)
+		expected := toyfloat15x3.Decode(xtf)
 
-		delta := GetIntegerDelta15X3(last, xtf)
-		resultTf := UseIntegerDelta15X3(last, delta)
-		result := Decode15X3(resultTf)
+		delta := toyfloat15x3.GetIntegerDelta(last, xtf)
+		resultTf := toyfloat15x3.UseIntegerDelta(last, delta)
+		result := toyfloat15x3.Decode(resultTf)
 
 		diff := math.Abs(result - expected)
 		if diff > eps {
@@ -1082,15 +1177,16 @@ func TestGetDelta12(t *testing.T) {
 
 	const eps = 1e-9
 
-	last := Encode12(start)
+	toyfloat12 := makeTypeX4(12, true, t)
+	last := toyfloat12.Encode(start)
 
 	for x := start + step; x <= stop; x += step {
-		xtf := Encode12(x)
-		expected := Decode12(xtf)
+		xtf := toyfloat12.Encode(x)
+		expected := toyfloat12.Decode(xtf)
 
-		delta := GetIntegerDelta12(last, xtf)
-		resultTf := UseIntegerDelta12(last, delta)
-		result := Decode12(resultTf)
+		delta := toyfloat12.GetIntegerDelta(last, xtf)
+		resultTf := toyfloat12.UseIntegerDelta(last, delta)
+		result := toyfloat12.Decode(resultTf)
 
 		diff := math.Abs(result - expected)
 		if diff > eps {
@@ -1106,6 +1202,8 @@ func TestGetDelta12(t *testing.T) {
 }
 
 func TestUseDeltaUnsigned(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+
 	const eps060 = 0.00195  // x = -1
 	const eps030 = 0.00097  // x = -2
 	const eps013 = 0.00048  // x = -3
@@ -1116,12 +1214,12 @@ func TestUseDeltaUnsigned(t *testing.T) {
 	b := 1 / (1 - a)
 	twoPowerM := math.Pow(2, 8)
 
-	last := Decode12U(Encode12U(0.6))
-	lastTf := Encode12U(last)
+	last := toyfloat12u.Decode(toyfloat12u.Encode(0.6))
+	lastTf := toyfloat12u.Encode(last)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf := UseIntegerDelta12U(lastTf, 0)
-	result := Decode12U(resultTf)
+	resultTf := toyfloat12u.UseIntegerDelta(lastTf, 0)
+	result := toyfloat12u.Decode(resultTf)
 	expected := last
 
 	if math.Abs(result-expected) > eps060 {
@@ -1129,8 +1227,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, 1)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, 1)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last + ((1.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -1138,8 +1236,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, -1)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, -1)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last - ((1.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -1147,8 +1245,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, 45)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, 45)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last + ((45.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -1156,8 +1254,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, -45)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, -45)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last - ((45.0/twoPowerM)*0.5)*b
 
 	if math.Abs(result-expected) > eps060 {
@@ -1165,8 +1263,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	last = Decode12U(Encode12U(0.3))
-	lastTf = Encode12U(last)
+	last = toyfloat12u.Decode(toyfloat12u.Encode(0.3))
+	lastTf = toyfloat12u.Encode(last)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
 	mantissa := lastTf & 0b11111111
@@ -1174,28 +1272,28 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("This test is probably broken: mantissa equals %d.", mantissa)
 	}
 
-	result = Decode12U(UseIntegerDelta12U(lastTf, 0))
+	result = toyfloat12u.Decode(toyfloat12u.UseIntegerDelta(lastTf, 0))
 	expected = last
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode12U(UseIntegerDelta12U(lastTf, 255-54))
+	result = toyfloat12u.Decode(toyfloat12u.UseIntegerDelta(lastTf, 255-54))
 	expected = last + (((255.0-54.0)/twoPowerM)*0.25)*b
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode12U(UseIntegerDelta12U(lastTf, -54))
+	result = toyfloat12u.Decode(toyfloat12u.UseIntegerDelta(lastTf, -54))
 	expected = last - ((54.0/twoPowerM)*0.25)*b
 
 	if math.Abs(result-expected) > eps030 {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode12U(UseIntegerDelta12U(lastTf, 255-54+1))
+	result = toyfloat12u.Decode(toyfloat12u.UseIntegerDelta(lastTf, 255-54+1))
 	expected = last +
 		(((255.0-54.0)/twoPowerM)*0.25)*b +
 		((1.0/twoPowerM)*0.5)*b
@@ -1204,7 +1302,7 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	result = Decode12U(UseIntegerDelta12U(lastTf, -55))
+	result = toyfloat12u.Decode(toyfloat12u.UseIntegerDelta(lastTf, -55))
 	expected = last -
 		((54.0/twoPowerM)*0.25)*b -
 		((1.0/twoPowerM)*0.125)*b
@@ -1214,11 +1312,11 @@ func TestUseDeltaUnsigned(t *testing.T) {
 	}
 
 	lastTf = 0b0
-	last = Decode12U(lastTf)
+	last = toyfloat12u.Decode(lastTf)
 	t.Logf("Last encoded: 0b%b", lastTf)
 
-	resultTf = UseIntegerDelta12U(lastTf, 0)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, 0)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last
 
 	if math.Abs(result-expected) > epsMin {
@@ -1226,8 +1324,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, 1)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, 1)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last + ((1.0/twoPowerM)*0.00390625)*b
 
 	if math.Abs(result-expected) > epsMin {
@@ -1235,8 +1333,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, -1)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, -1)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last // zero is the minimum value
 
 	if result != expected {
@@ -1244,8 +1342,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, -10)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, -10)
+	result = toyfloat12u.Decode(resultTf)
 	expected = last // zero is the minimum value
 
 	if result != expected {
@@ -1255,8 +1353,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 
 	// big deltas
 
-	resultTf = UseIntegerDelta12U(lastTf, 234234)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, 234234)
+	result = toyfloat12u.Decode(resultTf)
 	expected = ((1.0+(twoPowerM-1)/twoPowerM)*128 - a) * b
 
 	if math.Abs(result-expected) > epsMax {
@@ -1264,8 +1362,8 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	resultTf = UseIntegerDelta12U(lastTf, -16382)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, -16382)
+	result = toyfloat12u.Decode(resultTf)
 	expected = 0.0
 
 	if math.Abs(result-expected) > epsMin {
@@ -1273,11 +1371,11 @@ func TestUseDeltaUnsigned(t *testing.T) {
 		t.Fatalf("%f != %f", result, expected)
 	}
 
-	last = Decode12U(Encode12U(0.234))
-	lastTf = Encode12U(last)
+	last = toyfloat12u.Decode(toyfloat12u.Encode(0.234))
+	lastTf = toyfloat12u.Encode(last)
 
-	resultTf = UseIntegerDelta12U(lastTf, -26384)
-	result = Decode12U(resultTf)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, -26384)
+	result = toyfloat12u.Decode(resultTf)
 	expected = 0.0
 
 	if math.Abs(result-expected) > epsMin {
@@ -1293,15 +1391,16 @@ func TestGetDeltaUnsigned(t *testing.T) {
 
 	const eps = 1e-9
 
-	last := Encode12U(start)
+	toyfloat12u := makeTypeX4(12, false, t)
+	last := toyfloat12u.Encode(start)
 
 	for x := start + step; x <= stop; x += step {
-		xtf := Encode12U(x)
-		expected := Decode12U(xtf)
+		xtf := toyfloat12u.Encode(x)
+		expected := toyfloat12u.Decode(xtf)
 
-		delta := GetIntegerDelta12U(last, xtf)
-		resultTf := UseIntegerDelta12U(last, delta)
-		result := Decode12U(resultTf)
+		delta := toyfloat12u.GetIntegerDelta(last, xtf)
+		resultTf := toyfloat12u.UseIntegerDelta(last, delta)
+		result := toyfloat12u.Decode(resultTf)
 
 		diff := math.Abs(result - expected)
 		if diff > eps {
@@ -1323,15 +1422,16 @@ func TestGetDelta13(t *testing.T) {
 
 	const eps = 1e-9
 
-	last := Encode13(start)
+	toyfloat13 := makeTypeX4(13, true, t)
+	last := toyfloat13.Encode(start)
 
 	for x := start + step; x <= stop; x += step {
-		xtf := Encode13(x)
-		expected := Decode13(xtf)
+		xtf := toyfloat13.Encode(x)
+		expected := toyfloat13.Decode(xtf)
 
-		delta := GetIntegerDelta13(last, xtf)
-		resultTf := UseIntegerDelta13(last, delta)
-		result := Decode13(resultTf)
+		delta := toyfloat13.GetIntegerDelta(last, xtf)
+		resultTf := toyfloat13.UseIntegerDelta(last, delta)
+		result := toyfloat13.Decode(resultTf)
 
 		diff := math.Abs(result - expected)
 		if diff > eps {
@@ -1353,15 +1453,16 @@ func TestGetDelta14(t *testing.T) {
 
 	const eps = 1e-9
 
-	last := Encode14(start)
+	toyfloat14 := makeTypeX4(14, true, t)
+	last := toyfloat14.Encode(start)
 
 	for x := start + step; x <= stop; x += step {
-		xtf := Encode14(x)
-		expected := Decode14(xtf)
+		xtf := toyfloat14.Encode(x)
+		expected := toyfloat14.Decode(xtf)
 
-		delta := GetIntegerDelta14(last, xtf)
-		resultTf := UseIntegerDelta14(last, delta)
-		result := Decode14(resultTf)
+		delta := toyfloat14.GetIntegerDelta(last, xtf)
+		resultTf := toyfloat14.UseIntegerDelta(last, delta)
+		result := toyfloat14.Decode(resultTf)
 
 		diff := math.Abs(result - expected)
 		if diff > eps {
@@ -1379,11 +1480,13 @@ func TestGetDelta14(t *testing.T) {
 // ------------------------
 
 func Test12MinusBitPosition(t *testing.T) {
-	tf := Encode12(42)
+	toyfloat12 := makeTypeX4(12, true, t)
+
+	tf := toyfloat12.Encode(42)
 	t.Logf("Encoded: 0b%b", tf)
 
-	a := Decode12(tf)
-	b := -Decode12(tf | 0b1000_0000_0000)
+	a := toyfloat12.Decode(tf)
+	b := -toyfloat12.Decode(tf | 0b1000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)
@@ -1391,11 +1494,13 @@ func Test12MinusBitPosition(t *testing.T) {
 }
 
 func Test13MinusBitPosition(t *testing.T) {
-	tf := Encode13(42)
+	toyfloat13 := makeTypeX4(13, true, t)
+
+	tf := toyfloat13.Encode(42)
 	t.Logf("Encoded: 0b%b", tf)
 
-	a := Decode13(tf)
-	b := -Decode13(tf | 0b1_0000_0000_0000)
+	a := toyfloat13.Decode(tf)
+	b := -toyfloat13.Decode(tf | 0b1_0000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)
@@ -1403,11 +1508,13 @@ func Test13MinusBitPosition(t *testing.T) {
 }
 
 func Test14MinusBitPosition(t *testing.T) {
-	tf := Encode14(42)
+	toyfloat14 := makeTypeX4(14, true, t)
+
+	tf := toyfloat14.Encode(42)
 	t.Logf("Encoded: 0b%b", tf)
 
-	a := Decode14(tf)
-	b := -Decode14(tf | 0b10_0000_0000_0000)
+	a := toyfloat14.Decode(tf)
+	b := -toyfloat14.Decode(tf | 0b10_0000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)
@@ -1415,11 +1522,16 @@ func Test14MinusBitPosition(t *testing.T) {
 }
 
 func Test15X3MinusBitPosition(t *testing.T) {
-	tf := Encode15X3(42)
+	toyfloat15x3, err15x3 := NewTypeX3(15, true)
+	if err15x3 != nil {
+		t.Fatal(err15x3)
+	}
+
+	tf := toyfloat15x3.Encode(42)
 	t.Logf("Encoded: 0b%b", tf)
 
-	a := Decode15X3(tf)
-	b := -Decode15X3(tf | 0b0100_0000_0000_0000)
+	a := toyfloat15x3.Decode(tf)
+	b := -toyfloat15x3.Decode(tf | 0b0100_0000_0000_0000)
 
 	if a != b {
 		t.Fatalf("%f != %f", a, b)
@@ -1430,35 +1542,13 @@ func TestReadme(t *testing.T) {
 	const input = 0.345
 	const eps = 1e-6
 
-	toyfloat12, err12 := NewTypeX4(12, true)
-	if err12 != nil {
-		t.Fatal(err12)
-	}
+	toyfloat12 := makeTypeX4(12, true, t)
+	toyfloat12u := makeTypeX4(12, false, t)
+	toyfloat13 := makeTypeX4(13, true, t)
+	toyfloat14 := makeTypeX4(14, true, t)
 
-	toyfloat12u, err12u := NewTypeX4(12, false)
-	if err12u != nil {
-		t.Fatal(err12)
-	}
-
-	toyfloat13, err13 := NewTypeX4(13, true)
-	if err13 != nil {
-		t.Fatal(err13)
-	}
-
-	toyfloat14, err14 := NewTypeX4(14, true)
-	if err14 != nil {
-		t.Fatal(err14)
-	}
-
-	toyfloat15x3, err15x3 := NewTypeX3(15, true)
-	if err15x3 != nil {
-		t.Fatal(err15x3)
-	}
-
-	toyfloat5x3, err5x3 := NewTypeX3(5, true)
-	if err5x3 != nil {
-		t.Fatal(err5x3)
-	}
+	toyfloat15x3 := makeTypeX3(15, true, t)
+	toyfloat5x3 := makeTypeX3(5, true, t)
 
 	{
 		tf := toyfloat12.Encode(input)
@@ -1550,8 +1640,10 @@ func TestReadme(t *testing.T) {
 
 func TestExtremeCases(t *testing.T) {
 	{
+		toyfloat13 := makeTypeX4(13, true, t)
+
 		input := 0.9999999999995131
-		result := Decode13(Encode13(input))
+		result := toyfloat13.Decode(toyfloat13.Encode(input))
 
 		if math.Abs(result-input) > 0.001 {
 			t.Fatalf("%f != %f (13-bit)\n", result, input)

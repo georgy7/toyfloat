@@ -6,8 +6,7 @@ import (
 	"github.com/georgy7/toyfloat/internal/impl"
 )
 
-// Type is your custom floating-point format.
-// It may be up to 16 bits wide.
+// Type is a reusable immutable set of encoder settings.
 type Type struct {
 	settings impl.Settings
 }
@@ -38,7 +37,8 @@ func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
 	return impl.DecodeDelta(last, delta, &t.settings)
 }
 
-// --------------
+// ----------------
+// Deprecated API:
 
 // Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func Encode12(v float64) uint16 {
@@ -99,8 +99,6 @@ func Decode15X3(x uint16) float64 {
 	toyfloat15X3, _ := NewTypeX3(15, true)
 	return toyfloat15X3.Decode(x)
 }
-
-// -----------
 
 // Deprecated: Please use new object-oriented API. It's 4-8 times faster.
 func GetIntegerDelta12(last uint16, x uint16) int {
