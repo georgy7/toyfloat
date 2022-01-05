@@ -12,6 +12,11 @@ type Type struct {
 	settings settings
 }
 
+func NewTypeX2(length int, signed bool) (Type, error) {
+	s, e := newSettings(length, x2(), signed)
+	return Type{s}, e
+}
+
 func NewTypeX3(length int, signed bool) (Type, error) {
 	s, e := newSettings(length, x3(), signed)
 	return Type{s}, e
@@ -200,6 +205,17 @@ func x3() xConstants {
 		maxExponent:         -6 + 7,
 		twoPowerMinExponent: 1.0 / 64.0,
 		twoPowerMaxExponent: 2.0,
+	}
+}
+
+func x2() xConstants {
+	return xConstants{
+		xMask:               0b11,
+		xSize:               2,
+		minExponent:         -3,
+		maxExponent:         0,
+		twoPowerMinExponent: 1.0 / 8.0,
+		twoPowerMaxExponent: 1.0,
 	}
 }
 

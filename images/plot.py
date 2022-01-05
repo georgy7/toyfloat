@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import csv
 import numpy as np
 
-def get_data(data_fn):
+def get_data(data_fn, max_value):
     values = []
     precision = []
 
@@ -13,7 +13,7 @@ def get_data(data_fn):
         v = float(row[0])
         p = float(row[1])
 
-        if v < 20000:
+        if (v < max_value) and (p > 1e-7):
             values.append(v)
             precision.append(p)
 
@@ -21,7 +21,7 @@ def get_data(data_fn):
 
 
 def get_comparison_data(data_fn, minPowerX10 = -22, maxPowerX10 = 21):
-    values, precision = get_data(data_fn)
+    values, precision = get_data(data_fn, 20000)
     assert len(values) == len(precision)
 
     rv, pv = [], []
@@ -84,8 +84,8 @@ def new_figure():
     return figure, axes
 
 
-def make_image(data_fn, result_fn):
-    values, precision = get_data(data_fn)
+def make_image(data_fn, result_fn, max_value = 20000):
+    values, precision = get_data(data_fn, max_value)
 
     figure, ax = new_figure()
     figure.set_size_inches(5, 5)
@@ -115,11 +115,14 @@ def make_comparison(result_fn):
     values, precision = get_comparison_data('precision15x3.tsv', minPowerX10=-20, maxPowerX10=8)
     plt.plot(values, precision, '-', label='15x3')
 
-    values, precision = get_comparison_data('precision16u.tsv')
-    plt.plot(values, precision, '-', label='16u')
+    values, precision = get_comparison_data('precision15x2.tsv', minPowerX10=-9, maxPowerX10=3)
+    plt.plot(values, precision, '-', color='tab:pink', label='15x2')
+
+#     values, precision = get_comparison_data('precision16u.tsv')
+#     plt.plot(values, precision, '-', label='16u')
 
     values, precision = get_comparison_data('precision16x3u.tsv', minPowerX10=-20, maxPowerX10=8)
-    plt.plot(values, precision, '-', label='16x3u')
+    plt.plot(values, precision, '-', color='tab:gray', label='16x3u')
 
     ax.legend()
 
@@ -131,7 +134,8 @@ if __name__ == "__main__":
     make_image('precision12u.tsv', 'precision12u.png')
     make_image('precision13.tsv', 'precision13.png')
     make_image('precision14.tsv', 'precision14.png')
-    make_image('precision15x3.tsv', 'precision15x3.png')
+    make_image('precision15x3.tsv', 'precision15x3.png', 2.0)
+    make_image('precision15x2.tsv', 'precision15x2.png', 2.0)
     make_image('precision8x3.tsv', 'precision8x3.png')
     make_image('precision4x3u.tsv', 'precision4x3u.png')
     make_image('precision16.tsv', 'precision16.png')

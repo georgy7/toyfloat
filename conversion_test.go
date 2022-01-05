@@ -46,6 +46,24 @@ func getToyfloatPositiveSample() []struct {
 
 // ------------------------
 
+func TestX2BadArguments(t *testing.T) {
+	for i := -10; i <= 20; i++ {
+		if (i <= 3) || (i > 16) {
+			_, e := NewTypeX2(i, true)
+			if e == nil {
+				t.Fatalf("length=%d must result in an error", i)
+			}
+		}
+
+		if (i <= 2) || (i > 16) {
+			_, e := NewTypeX2(i, false)
+			if e == nil {
+				t.Fatalf("length=%d must result in an error (unsigned)", i)
+			}
+		}
+	}
+}
+
 func TestX3BadArguments(t *testing.T) {
 	for i := -10; i <= 20; i++ {
 		if (i <= 4) || (i > 16) {
@@ -80,6 +98,15 @@ func TestX4BadArguments(t *testing.T) {
 			}
 		}
 	}
+}
+
+func makeTypeX2(length int, signed bool, t *testing.T) Type {
+	tfType, err := NewTypeX2(length, signed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return tfType
 }
 
 func makeTypeX3(length int, signed bool, t *testing.T) Type {
@@ -1539,7 +1566,7 @@ func Test15X3MinusBitPosition(t *testing.T) {
 }
 
 func TestReadme(t *testing.T) {
-	const input = 0.345
+	const input = 1.567
 	const eps = 1e-6
 
 	toyfloat12 := makeTypeX4(12, true, t)
@@ -1549,71 +1576,84 @@ func TestReadme(t *testing.T) {
 
 	toyfloat15x3 := makeTypeX3(15, true, t)
 	toyfloat5x3 := makeTypeX3(5, true, t)
+	toyfloat5x2 := makeTypeX2(5, true, t)
 
 	{
 		tf := toyfloat12.Encode(input)
-		if tf != 0x332 {
+		if tf != 0x448 {
 			t.Fatalf("Incorrect encoded: 0x%X (12-bit)\n", tf)
 		}
 
 		result := toyfloat12.Decode(tf)
-		if math.Abs(result-0.345098) > eps {
+		if math.Abs(result-1.564706) > eps {
 			t.Fatalf("Incorrect decoded: %f (12-bit)\n", result)
 		}
 	}
 
 	{
 		tf := toyfloat12u.Encode(input)
-		if tf != 0x664 {
+		if tf != 0x891 {
 			t.Fatalf("Incorrect encoded: 0x%X (12-bit unsigned)\n", tf)
 		}
 	}
 
 	{
 		tf := toyfloat13.Encode(input)
-		if tf != 0x664 {
+		if tf != 0x891 {
 			t.Fatalf("Incorrect encoded: 0x%X (13-bit)\n", tf)
 		}
 
 		result := toyfloat13.Decode(tf)
-		if math.Abs(result-0.345098) > eps {
+		if math.Abs(result-1.568627) > eps {
 			t.Fatalf("Incorrect decoded: %f (13-bit)\n", result)
 		}
 	}
 
 	{
 		tf := toyfloat14.Encode(input)
-		if tf != 0xCC8 {
+		if tf != 0x1121 {
 			t.Fatalf("Incorrect encoded: 0x%X (14-bit)\n", tf)
 		}
 
 		result := toyfloat14.Decode(tf)
-		if math.Abs(result-0.345098) > eps {
+		if math.Abs(result-1.566667) > eps {
 			t.Fatalf("Incorrect decoded: %f (14-bit)\n", result)
 		}
 	}
 
 	{
 		tf := toyfloat15x3.Encode(input)
-		if tf != 0x235E {
+		if tf != 0x3477 {
 			t.Fatalf("Incorrect encoded: 0x%X (15x3)\n", tf)
 		}
 
 		result := toyfloat15x3.Decode(tf)
-		if math.Abs(result-0.344990) > eps {
+		if math.Abs(result-1.566964) > eps {
 			t.Fatalf("Incorrect decoded: %f (15x3)\n", result)
 		}
 	}
 
 	{
 		tf := toyfloat5x3.Encode(input)
-		if tf != 0b1001 {
-			t.Fatalf("Incorrect encoded: 0x%b (5x3)\n", tf)
+		if tf != 0b01101 {
+			t.Fatalf("Incorrect encoded: %05b (5x3)\n", tf)
 		}
 
 		result := toyfloat5x3.Decode(tf)
-		if math.Abs(result-0.365079) > eps {
+		if math.Abs(result-1.507937) > eps {
 			t.Fatalf("Incorrect decoded: %f (5x3)\n", result)
+		}
+	}
+
+	{
+		tf := toyfloat5x2.Encode(input)
+		if tf != 0b01110 {
+			t.Fatalf("Incorrect encoded: %05b (5x2)\n", tf)
+		}
+
+		result := toyfloat5x2.Decode(tf)
+		if math.Abs(result-1.571429) > eps {
+			t.Fatalf("Incorrect decoded: %f (5x2)\n", result)
 		}
 	}
 
