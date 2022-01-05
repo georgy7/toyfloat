@@ -1647,12 +1647,12 @@ func TestReadme(t *testing.T) {
 
 	{
 		tf := toyfloat5x2.Encode(input)
-		if tf != 0b01110 {
+		if tf != 0b01101 {
 			t.Fatalf("Incorrect encoded: %05b (5x2)\n", tf)
 		}
 
 		result := toyfloat5x2.Decode(tf)
-		if math.Abs(result-1.571429) > eps {
+		if math.Abs(result-1.519231) > eps {
 			t.Fatalf("Incorrect decoded: %f (5x2)\n", result)
 		}
 	}

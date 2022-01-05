@@ -47,12 +47,13 @@ func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
 // Implementation:
 
 type xConstants struct {
-	xMask               uint16
-	xSize               int
-	minExponent         int
-	maxExponent         int
-	twoPowerMinExponent float64
-	twoPowerMaxExponent float64
+	xMask                uint16
+	xSize                int
+	minExponent          int
+	maxExponent          int
+	base3                bool
+	basePowerMinExponent float64
+	basePowerMaxExponent float64
 }
 
 type settings struct {
@@ -65,34 +66,37 @@ type settings struct {
 
 func x4() xConstants {
 	return xConstants{
-		xMask:               0b1111,
-		xSize:               4,
-		minExponent:         -8,
-		maxExponent:         -8 + 15,
-		twoPowerMinExponent: 1.0 / 256.0,
-		twoPowerMaxExponent: 128.0,
+		xMask:                0b1111,
+		xSize:                4,
+		minExponent:          -8,
+		maxExponent:          -8 + 15,
+		base3:                false,
+		basePowerMinExponent: 1.0 / 256.0,
+		basePowerMaxExponent: 128.0,
 	}
 }
 
 func x3() xConstants {
 	return xConstants{
-		xMask:               0b111,
-		xSize:               3,
-		minExponent:         -6,
-		maxExponent:         -6 + 7,
-		twoPowerMinExponent: 1.0 / 64.0,
-		twoPowerMaxExponent: 2.0,
+		xMask:                0b111,
+		xSize:                3,
+		minExponent:          -6,
+		maxExponent:          -6 + 7,
+		base3:                false,
+		basePowerMinExponent: 1.0 / 64.0,
+		basePowerMaxExponent: 2.0,
 	}
 }
 
 func x2() xConstants {
 	return xConstants{
-		xMask:               0b11,
-		xSize:               2,
-		minExponent:         -3,
-		maxExponent:         0,
-		twoPowerMinExponent: 1.0 / 8.0,
-		twoPowerMaxExponent: 1.0,
+		xMask:                0b11,
+		xSize:                2,
+		minExponent:          -3,
+		maxExponent:          0,
+		base3:                true,
+		basePowerMinExponent: 1.0 / 27.0,
+		basePowerMaxExponent: 1.0,
 	}
 }
 
@@ -137,36 +141,41 @@ func encode(value float64, settings *settings) uint16 {
 		return 0x0
 	}
 
-	a := settings.xc.twoPowerMinExponent
-	reversedB := 1.0 - a
+	a := settings.xc.basePowerMinExponent
+	reversedC := 1.0 - a
 
 	if value >= 0 {
-		return encodeInnerValue(value*reversedB+a, settings)
+		return encodeInnerValue(value*reversedC+a, settings)
 	} else if 0b0 == settings.minus {
 		return 0x0
 	} else {
-		return settings.minus | encodeInnerValue(-value*reversedB+a, settings)
+		return settings.minus | encodeInnerValue(-value*reversedC+a, settings)
 	}
 }
 
 func decode(tf uint16, settings *settings) float64 {
 
 	exponentOffset := -settings.xc.minExponent
-	a := settings.xc.twoPowerMinExponent
-	reversedB := 1.0 - a
-	b := 1.0 / reversedB
+	a := settings.xc.basePowerMinExponent
+	reversedC := 1.0 - a
+	c := 1.0 / reversedC
 
 	xShift, xMask := settings.xShift, settings.xc.xMask
 	mMask, mSize := settings.mMask, settings.mSize
 
 	x := int((tf>>xShift)&xMask) - exponentOffset
 
-	significand := 1.0 + float64(tf&mMask)/powerOfTwo(mSize)
-	characteristic := powerOfTwo(x)
+	significand := float64(tf&mMask) / powerOfTwo(mSize)
+	if settings.xc.base3 {
+		significand *= 2.0
+	}
+	significand += 1.0
 
-	r := significand * characteristic
+	scale := getScale(settings, x)
 
-	return (r - a) * b * sign(tf, settings.minus)
+	r := significand * scale
+
+	return (r - a) * c * sign(tf, settings.minus)
 }
 
 func sign(x uint16, minus uint16) float64 {
@@ -186,7 +195,15 @@ func encodeInnerValue(inner float64, s *settings) uint16 {
 	maxValue := (xMask << xShift) | mMask
 
 	twoPowerM := powerOfTwo(mSize)
-	internalMaximum := (1 + (twoPowerM-1)/twoPowerM) * s.xc.twoPowerMaxExponent
+	mMax := twoPowerM - 1.0
+
+	internalMaximum := mMax / twoPowerM
+	if s.xc.base3 {
+		internalMaximum *= 2.0
+	}
+	internalMaximum += 1.0
+	internalMaximum *= s.xc.basePowerMaxExponent
+
 	if inner >= internalMaximum {
 		return maxValue
 	}
@@ -194,11 +211,15 @@ func encodeInnerValue(inner float64, s *settings) uint16 {
 	x := getExponent(inner, s)
 	binaryExponent := uint16(x+exponentOffset) << xShift
 
-	characteristic := powerOfTwo(x)
-	normalized := inner / characteristic
+	scale := getScale(s, x)
+	normalized := inner / scale
 
-	mFloat := (normalized - 1.0) * twoPowerM
-	mMax := twoPowerM - 1.0
+	mFloat := normalized - 1.0
+	if s.xc.base3 {
+		mFloat *= 0.5
+	}
+	mFloat *= twoPowerM
+
 	binarySignificand := uint16(math.Min(math.Round(mFloat), mMax))
 
 	return binarySignificand | binaryExponent
@@ -208,10 +229,16 @@ func getExponent(innerValue float64, s *settings) int {
 	modulus := math.Abs(innerValue)
 
 	eps := 0.5 / powerOfTwo(s.mSize)
-	factor := 2.0 - eps
+	var factor float64
+
+	if s.xc.base3 {
+		factor = 3.0 - (2.0 * eps)
+	} else {
+		factor = 2.0 - eps
+	}
 
 	for exp := s.xc.maxExponent; exp > s.xc.minExponent; exp-- {
-		if factor*powerOfTwo(exp-1) <= modulus {
+		if factor*getScale(s, exp-1) <= modulus {
 			return exp
 		}
 	}
@@ -240,6 +267,18 @@ func powerOfTwo(x int) float64 {
 		return 1.0 / float64(int(1)<<-x)
 	} else {
 		return float64(int(1) << x)
+	}
+}
+
+func powerOfThree(x int) float64 {
+	return math.Pow(3.0, float64(x))
+}
+
+func getScale(s *settings, x int) float64 {
+	if s.xc.base3 {
+		return powerOfThree(x)
+	} else {
+		return powerOfTwo(x)
 	}
 }
 

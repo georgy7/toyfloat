@@ -112,11 +112,11 @@ def make_comparison(result_fn):
     values, precision = get_comparison_data('precision14.tsv')
     plt.plot(values, precision, '-', label='14')
 
+    values, precision = get_comparison_data('precision15x2.tsv', minPowerX10=-17, maxPowerX10=5)
+    plt.plot(values, precision, '-', color='tab:pink', label='15x2')
+
     values, precision = get_comparison_data('precision15x3.tsv', minPowerX10=-20, maxPowerX10=8)
     plt.plot(values, precision, '-', label='15x3')
-
-    values, precision = get_comparison_data('precision15x2.tsv', minPowerX10=-9, maxPowerX10=3)
-    plt.plot(values, precision, '-', color='tab:pink', label='15x2')
 
 #     values, precision = get_comparison_data('precision16u.tsv')
 #     plt.plot(values, precision, '-', label='16u')
@@ -134,8 +134,8 @@ if __name__ == "__main__":
     make_image('precision12u.tsv', 'precision12u.png')
     make_image('precision13.tsv', 'precision13.png')
     make_image('precision14.tsv', 'precision14.png')
-    make_image('precision15x3.tsv', 'precision15x3.png', 2.0)
-    make_image('precision15x2.tsv', 'precision15x2.png', 2.0)
+    make_image('precision15x3.tsv', 'precision15x3.png', 3.0)
+    make_image('precision15x2.tsv', 'precision15x2.png', 3.0)
     make_image('precision8x3.tsv', 'precision8x3.png')
     make_image('precision4x3u.tsv', 'precision4x3u.png')
     make_image('precision16.tsv', 'precision16.png')

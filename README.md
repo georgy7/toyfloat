@@ -14,7 +14,7 @@ It has:
 * values, that are in range about:
   * (-256, +256) for 4-bit exponent
   * (-4, +4) for 3-bit exponent
-  * (-2, +2) for 2-bit exponent
+  * (-3, +3) for 2-bit exponent
 
 ![Formula](images/formula.png)
 
@@ -172,9 +172,9 @@ Delta:   0.059063
 
 5-bit signed with 2-bit exponent
 --------------------------------
-Encoded: 0xE
-Decoded: 1.571429
-Delta:   0.004429
+Encoded: 0xD
+Decoded: 1.519231
+Delta:   0.047769
 
 
 Delta encoding (12-bit)

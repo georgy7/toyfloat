@@ -13,7 +13,7 @@
         \\
 
             \vbox{\begin{equation*}
-            f(m, x) = sign \cdot ((1 + \frac{m}{2^{M}}) \cdot 2^{x} - a) \cdot b
+            f(m, x) = sign \cdot ((1 + (b - 1) \frac{m}{2^{M}}) \cdot b^{x} - a) \cdot c
             \end{equation*}}
 
         \\
@@ -25,33 +25,39 @@
         \\
 
             \vbox{\begin{equation*}\tag{4 bits}
-            \{ x \in \mathbb{Z} \mid -8 \leq x \leq 7 \}
+            \{ x \in \mathbb{Z} \mid -8 \leq x \leq 7 \},
+            \quad
+            b = 2
             \end{equation*}}
 
         \\
 
             \vbox{\begin{equation*}\tag{3 bits}
-            \{ x \in \mathbb{Z} \mid -6 \leq x \leq 1 \}
+            \{ x \in \mathbb{Z} \mid -6 \leq x \leq 1 \},
+            \quad
+            b = 2
             \end{equation*}}
 
         \\
 
             \vbox{\begin{equation*}\tag{2 bits}
-            \{ x \in \mathbb{Z} \mid -3 \leq x \leq 0 \}
+            \{ x \in \mathbb{Z} \mid -3 \leq x \leq 0 \},
+            \quad
+            b = 3
             \end{equation*}}
 
         \\
 
             \vbox{\begin{equation*}
-            a = (1 + \frac{0}{2^{M}}) \cdot 2^{\min{X}}
+            a = (1 + \frac{0}{2^{M}}) \cdot b^{\min{X}}
             \quad \quad
-            a = 2^{\min{X}}
+            a = b^{\min{X}}
             \end{equation*}}
 
         \\
 
             \vbox{\begin{equation*}
-            b = \frac{1}{1 - a}
+            c = \frac{1}{1 - a}
             \end{equation*}}
 
         \\
