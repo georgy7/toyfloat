@@ -35,6 +35,7 @@ package main
 import (
 	"fmt"
 	"github.com/georgy7/toyfloat"
+	"math"
 	"os"
 )
 
@@ -63,39 +64,77 @@ func main() {
 	toyfloat5x3, err5x3 := toyfloat.NewTypeX3(5, true)
 	exitOnError(err5x3)
 
-	tf := toyfloat12.Encode(0.345)
-	fmt.Printf("0x%X\n", tf)
+	const v = 1.567
+
+	fmt.Printf("Input:   %f\n\n", v)
+
+	println("12-bit signed")
+	println("-------------")
+	tf := toyfloat12.Encode(v)
+	fmt.Printf("Encoded: 0x%X\n", tf)
 	f := toyfloat12.Decode(tf)
-	fmt.Printf("%f\n\n", f)
+	fmt.Printf("Decoded: %f\n", f)
+	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
 
-	tf = toyfloat13.Encode(0.345)
-	fmt.Printf("0x%X\n", tf)
+	println("13-bit signed")
+	println("-------------")
+	tf = toyfloat13.Encode(v)
+	fmt.Printf("Encoded: 0x%X\n", tf)
 	f = toyfloat13.Decode(tf)
-	fmt.Printf("%f\n\n", f)
+	fmt.Printf("Decoded: %f\n", f)
+	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
 
-	tf = toyfloat14.Encode(0.345)
-	fmt.Printf("0x%X\n", tf)
+	println("14-bit signed")
+	println("-------------")
+	tf = toyfloat14.Encode(v)
+	fmt.Printf("Encoded: 0x%X\n", tf)
 	f = toyfloat14.Decode(tf)
-	fmt.Printf("%f\n\n", f)
+	fmt.Printf("Decoded: %f\n", f)
+	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
 
-	tf = toyfloat15x3.Encode(0.345)
-	fmt.Printf("0x%X\n", tf)
+	println("15-bit signed with 3-bit exponent")
+	println("---------------------------------")
+	tf = toyfloat15x3.Encode(v)
+	fmt.Printf("Encoded: 0x%X\n", tf)
 	f = toyfloat15x3.Decode(tf)
-	fmt.Printf("%f\n\n", f)
+	fmt.Printf("Decoded: %f\n", f)
+	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
 
-	tf = toyfloat5x3.Encode(0.345)
-	fmt.Printf("0b%b\n", tf)
+	println("5-bit signed with 3-bit exponent")
+	println("--------------------------------")
+	tf = toyfloat5x3.Encode(v)
+	fmt.Printf("Encoded: %05b\n", tf)
 	f = toyfloat5x3.Decode(tf)
-	fmt.Printf("%f\n\n", f)
+	fmt.Printf("Decoded: %f\n", f)
+	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
 
-	series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
+	println()
+	println("Delta encoding (12-bit)")
+	println("-----------------------\n")
+
+	series := []float64{
+		-0.0058, 0.01, 0.066, 0.123,
+		0.134, 0.132, 0.144, 0.145, 0.140}
+
 	previous := toyfloat12.Encode(series[0])
+	pDecoded := toyfloat12.Decode(previous)
+
+	fmt.Printf("  Int. delta    Fp delta    Value\n")
+	fmt.Printf("  % 35.6f\n", pDecoded)
+
 	for i := 1; i < len(series); i++ {
 		this := toyfloat12.Encode(series[i])
 		delta := toyfloat12.GetIntegerDelta(previous, this)
-		fmt.Printf("%d\n", delta)
+
+		x := toyfloat12.Decode(this)
+		fpDelta := x - pDecoded
+		fmt.Printf("  %+10d    %+.6f   % .6f\n", delta, fpDelta, x)
+
 		previous = this
+		pDecoded = toyfloat12.Decode(previous)
 	}
+
+	println()
 }
 ```
 
@@ -105,26 +144,50 @@ go run example.go
 ```
 
 ```
-0x332
-0.345098
+Input:   1.567000
 
-0x664
-0.345098
+12-bit signed
+-------------
+Encoded: 0x448
+Decoded: 1.564706
+Delta:   0.002294
 
-0xCC8
-0.345098
+13-bit signed
+-------------
+Encoded: 0x891
+Decoded: 1.568627
+Delta:   0.001627
 
-0x235E
-0.344990
+14-bit signed
+-------------
+Encoded: 0x1121
+Decoded: 1.566667
+Delta:   0.000333
 
-0b1001
-0.365079
+15-bit signed with 3-bit exponent
+---------------------------------
+Encoded: 0x3477
+Decoded: 1.566964
+Delta:   0.000036
 
-387
-414
-12
--2
-12
-1
--5
+5-bit signed with 3-bit exponent
+--------------------------------
+Encoded: 01101
+Decoded: 1.507937
+Delta:   0.059063
+
+
+Delta encoding (12-bit)
+-----------------------
+
+  Int. delta    Fp delta    Value
+                            -0.005821
+        +387    +0.015809    0.009988
+        +300    +0.056189    0.066176
+        +114    +0.056373    0.122549
+         +12    +0.011765    0.134314
+          -2    -0.001961    0.132353
+         +12    +0.011765    0.144118
+          +1    +0.000980    0.145098
+          -5    -0.004902    0.140196
 ```
