@@ -141,5 +141,7 @@ if __name__ == "__main__":
     make_image('precision16.tsv', 'precision16.png')
     make_image('precision16u.tsv', 'precision16u.png')
     make_image('precision16x3u.tsv', 'precision16x3u.png')
+    make_image('precision16x3.tsv', 'precision16x3.png', 3.0)
+    make_image('precision16x2.tsv', 'precision16x2.png', 3.0)
 
     make_comparison('comparison.png')
