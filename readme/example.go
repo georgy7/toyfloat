@@ -14,78 +14,60 @@ func exitOnError(err error) {
 	}
 }
 
+func report(header string, tf uint16, f, v float64) {
+	println(header)
+	for i := 0; i < len(header); i++ {
+		print("-")
+	}
+	println()
+	fmt.Printf("Encoded: 0x%X\n", tf)
+	fmt.Printf("Decoded: %f\n", f)
+	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+}
+
 func main() {
 	println()
 
 	toyfloat12, err12 := toyfloat.NewTypeX4(12, true)
-	exitOnError(err12)
-
 	toyfloat13, err13 := toyfloat.NewTypeX4(13, true)
-	exitOnError(err13)
-
 	toyfloat14, err14 := toyfloat.NewTypeX4(14, true)
-	exitOnError(err14)
-
 	toyfloat15x3, err15x3 := toyfloat.NewTypeX3(15, true)
-	exitOnError(err15x3)
-
 	toyfloat5x3, err5x3 := toyfloat.NewTypeX3(5, true)
-	exitOnError(err5x3)
-
 	toyfloat5x2, err5x2 := toyfloat.NewTypeX2(5, true)
+
+	exitOnError(err12)
+	exitOnError(err13)
+	exitOnError(err14)
+	exitOnError(err15x3)
+	exitOnError(err5x3)
 	exitOnError(err5x2)
 
-	const v = 1.567
+	const input = 1.567
+	fmt.Printf("Input:   %f\n\n", input)
 
-	fmt.Printf("Input:   %f\n\n", v)
-
-	println("12-bit signed")
-	println("-------------")
-	tf := toyfloat12.Encode(v)
-	fmt.Printf("Encoded: 0x%X\n", tf)
+	tf := toyfloat12.Encode(input)
 	f := toyfloat12.Decode(tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	report("12-bit signed", tf, f, input)
 
-	println("13-bit signed")
-	println("-------------")
-	tf = toyfloat13.Encode(v)
-	fmt.Printf("Encoded: 0x%X\n", tf)
+	tf = toyfloat13.Encode(input)
 	f = toyfloat13.Decode(tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	report("13-bit signed", tf, f, input)
 
-	println("14-bit signed")
-	println("-------------")
-	tf = toyfloat14.Encode(v)
-	fmt.Printf("Encoded: 0x%X\n", tf)
+	tf = toyfloat14.Encode(input)
 	f = toyfloat14.Decode(tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	report("14-bit signed", tf, f, input)
 
-	println("15-bit signed with 3-bit exponent")
-	println("---------------------------------")
-	tf = toyfloat15x3.Encode(v)
-	fmt.Printf("Encoded: 0x%X\n", tf)
+	tf = toyfloat15x3.Encode(input)
 	f = toyfloat15x3.Decode(tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	report("15-bit signed with 3-bit exponent", tf, f, input)
 
-	println("5-bit signed with 3-bit exponent")
-	println("--------------------------------")
-	tf = toyfloat5x3.Encode(v)
-	fmt.Printf("Encoded: %05b\n", tf)
+	tf = toyfloat5x3.Encode(input)
 	f = toyfloat5x3.Decode(tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	report("5-bit signed with 3-bit exponent", tf, f, input)
 
-	println("5-bit signed with 2-bit exponent")
-	println("--------------------------------")
-	tf = toyfloat5x2.Encode(v)
-	fmt.Printf("Encoded: %05b\n", tf)
+	tf = toyfloat5x2.Encode(input)
 	f = toyfloat5x2.Decode(tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	report("5-bit signed with 2-bit exponent", tf, f, input)
 
 	println()
 	println("Delta encoding (12-bit)")
