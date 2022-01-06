@@ -174,8 +174,14 @@ func decode(tf uint16, settings *settings) float64 {
 	scale := getScale(settings, x)
 
 	r := significand * scale
+	r = (r - a) * c
 
-	return (r - a) * c * sign(tf, settings.minus)
+	// The problem only appeared with base three exponent.
+	if math.Abs(r-1.0) < 1e-14 {
+		r = 1.0
+	}
+
+	return r * sign(tf, settings.minus)
 }
 
 func sign(x uint16, minus uint16) float64 {
