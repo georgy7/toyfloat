@@ -1,4 +1,4 @@
-// Package toyfloat provides tiny (4 to 16 bits)
+// Package toyfloat provides tiny (3 to 16 bits)
 // floating-point number formats for serialization.
 package toyfloat
 

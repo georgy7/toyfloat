@@ -46,56 +46,58 @@ func getToyfloatPositiveSample() []struct {
 
 // ------------------------
 
+func checkBadArguments(t *testing.T, i, min, max int, e error, remark string) {
+	inLimits := (i >= min) && (i <= max)
+
+	comment := remark
+	if len(comment) > 0 {
+		comment = " (" + remark + ")"
+	}
+
+	if (e != nil) && inLimits {
+		t.Fatalf("length=%d must work%s", i, comment)
+	}
+
+	if (e == nil) && !inLimits {
+		t.Fatalf("length=%d must result in an error%s", i, comment)
+	}
+}
+
 func TestX2BadArguments(t *testing.T) {
 	for i := -10; i <= 20; i++ {
-		if (i <= 3) || (i > 16) {
+		{
 			_, e := NewTypeX2(i, true)
-			if e == nil {
-				t.Fatalf("length=%d must result in an error", i)
-			}
+			checkBadArguments(t, i, 4, 16, e, "")
 		}
-
-		if (i <= 2) || (i > 16) {
+		{
 			_, e := NewTypeX2(i, false)
-			if e == nil {
-				t.Fatalf("length=%d must result in an error (unsigned)", i)
-			}
+			checkBadArguments(t, i, 3, 16, e, "unsigned")
 		}
 	}
 }
 
 func TestX3BadArguments(t *testing.T) {
 	for i := -10; i <= 20; i++ {
-		if (i <= 4) || (i > 16) {
+		{
 			_, e := NewTypeX3(i, true)
-			if e == nil {
-				t.Fatalf("length=%d must result in an error", i)
-			}
+			checkBadArguments(t, i, 5, 16, e, "")
 		}
-
-		if (i <= 3) || (i > 16) {
+		{
 			_, e := NewTypeX3(i, false)
-			if e == nil {
-				t.Fatalf("length=%d must result in an error (unsigned)", i)
-			}
+			checkBadArguments(t, i, 4, 16, e, "unsigned")
 		}
 	}
 }
 
 func TestX4BadArguments(t *testing.T) {
 	for i := -10; i <= 20; i++ {
-		if (i <= 5) || (i > 16) {
+		{
 			_, e := NewTypeX4(i, true)
-			if e == nil {
-				t.Fatalf("length=%d must result in an error", i)
-			}
+			checkBadArguments(t, i, 6, 16, e, "")
 		}
-
-		if (i <= 4) || (i > 16) {
+		{
 			_, e := NewTypeX4(i, false)
-			if e == nil {
-				t.Fatalf("length=%d must result in an error (unsigned)", i)
-			}
+			checkBadArguments(t, i, 5, 16, e, "unsigned")
 		}
 	}
 }

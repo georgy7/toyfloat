@@ -67,6 +67,9 @@ func main() {
 	toyfloat4x3u, err4x3u := toyfloat.NewTypeX3(4, false)
 	exitOnError(err4x3u)
 
+	toyfloat3x2u, err3x2u := toyfloat.NewTypeX2(3, false)
+	exitOnError(err3x2u)
+
 	toyfloat16, err16 := toyfloat.NewTypeX4(16, true)
 	exitOnError(err16)
 
@@ -112,6 +115,10 @@ func main() {
 
 	generate("precision4x3u.tsv", func(x float64) float64 {
 		return toyfloat4x3u.Decode(toyfloat4x3u.Encode(x))
+	})
+
+	generate("precision3x2u.tsv", func(x float64) float64 {
+		return toyfloat3x2u.Decode(toyfloat3x2u.Encode(x))
 	})
 
 	generate("precision16.tsv", func(x float64) float64 {
