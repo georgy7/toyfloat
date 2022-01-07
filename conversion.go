@@ -9,12 +9,11 @@ import (
 
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
-	mSize        int
-	minus        uint16
-	mMask        uint16
-	innerMaximum float64
-	twoPowerM    float64
-	xc           xConstants
+	mSize     int
+	minus     uint16
+	mMask     uint16
+	twoPowerM float64
+	xc        xConstants
 }
 
 func NewTypeX2(length int, signed bool) (Type, error) {
@@ -88,15 +87,8 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 		scales[x-minX] = calculateScale(b3, x)
 	}
 
-	twoPowerM := powerOfTwo(mSize)
-	mMax := twoPowerM - 1.0
-
-	internalMaximum := decodeSignificand(mMax, twoPowerM, b3)
-	internalMaximum *= calculateScale(b3, maxX)
-
 	return Type{mSize, minus, mMask,
-		internalMaximum,
-		twoPowerM,
+		powerOfTwo(mSize),
 		xConstants{
 			xMask:       getOnes(xSize),
 			xSize:       xSize,
@@ -170,7 +162,10 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 
 	mMax := s.twoPowerM - 1.0
 
-	if inner >= s.innerMaximum {
+	internalMaximum := decodeSignificand(mMax, s.twoPowerM, s.xc.base3)
+	internalMaximum *= getScale(s.xc.maxExponent, s)
+
+	if inner >= internalMaximum {
 		return (xMask << xShift) | s.mMask
 	}
 
