@@ -820,9 +820,8 @@ func Test15X3Precision(t *testing.T) {
 	fixPrecision := func(number, precision float64) float64 {
 		if number < 0.0158 {
 			return 0.000008
-		} else {
-			return precision * 0.0625
 		}
+		return precision * 0.0625
 	}
 
 	for _, tt := range tests {

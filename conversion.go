@@ -63,7 +63,7 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 
 	mSize := length - xSize
 	if signed {
-		mSize -= 1
+		mSize--
 	}
 
 	if mSize < 1 {
@@ -112,20 +112,19 @@ func encode(value float64, settings *Type) uint16 {
 		return 0x0
 	}
 
-	nv := value < 0
+	negativeValue := value < 0
 
-	if nv && (0b0 == settings.minus) {
+	if negativeValue && (0b0 == settings.minus) {
 		return 0x0
 	}
 
 	a := settings.xc.scales[0]
 	vReversedC := value * (1.0 - a)
 
-	if nv {
+	if negativeValue {
 		return settings.minus | encodeInnerValue(a-vReversedC, settings)
-	} else {
-		return encodeInnerValue(a+vReversedC, settings)
 	}
+	return encodeInnerValue(a+vReversedC, settings)
 }
 
 func decode(tf uint16, settings *Type) float64 {
@@ -156,21 +155,19 @@ func decode(tf uint16, settings *Type) float64 {
 }
 
 func encodeInnerValue(inner float64, s *Type) uint16 {
-
-	xShift, xMask := s.mSize, s.xc.xMask
-	xBias := s.xc.minExponent
-
 	mMax := s.twoPowerM - 1.0
 
 	internalMaximum := decodeSignificand(mMax, s.twoPowerM, s.xc.base3)
 	internalMaximum *= getScale(s.xc.maxExponent, s)
 
 	if inner >= internalMaximum {
-		return (xMask << xShift) | s.mMask
+		return (s.xc.xMask << s.mSize) | s.mMask
 	}
 
 	x, scale := getExponent(inner, s)
-	binaryExponent := uint16(x-xBias) << xShift
+
+	xBias := s.xc.minExponent
+	binaryExponent := uint16(x-xBias) << s.mSize
 
 	normalized := inner / scale
 
@@ -185,9 +182,8 @@ func encodeSignificand(normalized float64, s *Type) float64 {
 	mFloat := normalized - 1.0
 	if s.xc.base3 {
 		return mFloat * powerOfTwo(s.mSize-1)
-	} else {
-		return mFloat * s.twoPowerM
 	}
+	return mFloat * s.twoPowerM
 }
 
 func decodeSignificand(m, twoPowerM float64, base3 bool) float64 {
@@ -218,9 +214,9 @@ func getExponent(innerValue float64, s *Type) (int, float64) {
 		smallerScale := getScale(exp-1, s)
 		if factor*smallerScale <= modulus {
 			return exp, scale
-		} else {
-			scale = smallerScale
 		}
+
+		scale = smallerScale
 	}
 
 	return s.xc.minExponent, scale
@@ -245,19 +241,16 @@ func getOnes(bits int) uint16 {
 func powerOfTwo(x int) float64 {
 	if x < 0 {
 		return 1.0 / float64(int(1)<<-x)
-	} else {
-		return float64(int(1) << x)
 	}
+	return float64(int(1) << x)
 }
 
 func powerOfThree(x int) float64 {
 	root := x < 0
 
-	var absX int
+	absX := x
 	if root {
 		absX = -x
-	} else {
-		absX = x
 	}
 
 	rInt := 1
@@ -267,34 +260,30 @@ func powerOfThree(x int) float64 {
 
 	if root {
 		return 1.0 / float64(rInt)
-	} else {
-		return float64(rInt)
 	}
+	return float64(rInt)
 }
 
 func calculateScale(base3 bool, x int) float64 {
 	if base3 {
 		return powerOfThree(x)
-	} else {
-		return powerOfTwo(x)
 	}
+	return powerOfTwo(x)
 }
 
 func getScale(x int, s *Type) float64 {
 	index := x - s.xc.minExponent
 	if index <= 0 {
 		return s.xc.scales[0]
-	} else {
-		return s.xc.scales[index%len(s.xc.scales)]
 	}
+	return s.xc.scales[index%len(s.xc.scales)]
 }
 
 func min(a int, b int) int {
 	if a < b {
 		return a
-	} else {
-		return b
 	}
+	return b
 }
 
 func encodeDelta(last uint16, x uint16, settings *Type) int {
@@ -309,18 +298,16 @@ func encodeDelta(last uint16, x uint16, settings *Type) int {
 		diff := absX - absLast
 		if xIsNegative {
 			return -diff
-		} else {
-			return diff
 		}
-	} else {
-		// the additional 1 is minus zero
-		sum := absX + 1 + absLast
-		if lastIsNegative {
-			return sum
-		} else {
-			return -sum
-		}
+		return diff
 	}
+
+	// the additional 1 is minus zero
+	sum := absX + 1 + absLast
+	if lastIsNegative {
+		return sum
+	}
+	return -sum
 }
 
 func decodeDelta(last uint16, delta int, s *Type) uint16 {
@@ -330,25 +317,22 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 
 	absLast := int(abs(last, s))
 
-	xShift, xMask := s.mSize, s.xc.xMask
-	mMask := s.mMask
-	maxValue := (xMask << xShift) | mMask
+	maxValue := (s.xc.xMask << s.mSize) | s.mMask
 
 	if isNegative(last, s) {
 		absX := min(absLast-delta, int(maxValue))
 		if absX >= 0 {
 			return s.minus | uint16(absX)
-		} else {
-			return uint16(min(-(absX + 1), int(maxValue)))
 		}
+		return uint16(min(-(absX + 1), int(maxValue)))
+	}
+
+	absX := min(absLast+delta, int(maxValue))
+	if absX >= 0 {
+		return uint16(absX)
+	} else if s.minus == 0b0 {
+		return 0b0
 	} else {
-		absX := min(absLast+delta, int(maxValue))
-		if absX >= 0 {
-			return uint16(absX)
-		} else if s.minus == 0b0 {
-			return 0b0
-		} else {
-			return s.minus | uint16(min(-(absX+1), int(maxValue)))
-		}
+		return s.minus | uint16(min(-(absX+1), int(maxValue)))
 	}
 }
