@@ -75,10 +75,10 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 		minus = uint16(1) << (length - 1)
 	}
 
-	mMask := getOnes(mSize)
 	maxX := minX + (int(1) << xSize) - 1
 
 	if xSize > 4 {
+		// Because of scales array size (2^4 = 16).
 		return Type{}, errors.New("such big exponents are not supported")
 	}
 
@@ -91,10 +91,13 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 		scales[x-minX] = math.Pow(base, float64(x))
 	}
 
-	return Type{mSize, minus, mMask,
-		powerOfTwo(mSize),
-		xConstants{
-			xMask:       getOnes(xSize),
+	return Type{
+		mSize:     mSize,
+		minus:     minus,
+		mMask:     getOneBits(mSize),
+		twoPowerM: powerOfTwo(mSize),
+		xc: xConstants{
+			xMask:       getOneBits(xSize),
 			xSize:       xSize,
 			minExponent: minX,
 			maxExponent: maxX,
@@ -103,12 +106,11 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 		}}, nil
 }
 
-func isNegative(tf uint16, settings *Type) bool {
-	return 0b0 != tf&(settings.minus)
-}
-
-func abs(tf uint16, settings *Type) uint16 {
-	return tf & (^settings.minus)
+func getOneBits(bits int) uint16 {
+	if bits >= 16 {
+		return ^uint16(0)
+	}
+	return (uint16(1) << bits) - 1
 }
 
 func encode(value float64, settings *Type) uint16 {
@@ -226,42 +228,12 @@ func getExponent(innerValue float64, s *Type) (int, float64) {
 	return s.xc.minExponent, scale
 }
 
-func getOnes(bits int) uint16 {
-	count := bits
-	if count > 16 {
-		count = 16
-	}
-
-	const bit uint16 = 1
-
-	result := uint16(0)
-	for i := 0; i < count; i++ {
-		result |= bit << i
-	}
-
-	return result
-}
-
-func powerOfTwo(x int) float64 {
-	if x < 0 {
-		return 1.0 / float64(int(1)<<-x)
-	}
-	return float64(int(1) << x)
-}
-
 func getScale(x int, s *Type) float64 {
 	index := x - s.xc.minExponent
 	if index <= 0 {
 		return s.xc.scales[0]
 	}
 	return s.xc.scales[index%len(s.xc.scales)]
-}
-
-func min(a int, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func encodeDelta(last uint16, x uint16, settings *Type) int {
@@ -313,4 +285,26 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 	} else {
 		return s.minus | uint16(min(-(absX+1), int(maxValue)))
 	}
+}
+
+func isNegative(tf uint16, settings *Type) bool {
+	return 0b0 != tf&(settings.minus)
+}
+
+func abs(tf uint16, settings *Type) uint16 {
+	return tf & (^settings.minus)
+}
+
+func powerOfTwo(x int) float64 {
+	if x < 0 {
+		return 1.0 / float64(int(1)<<-x)
+	}
+	return float64(int(1) << x)
+}
+
+func min(a int, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
