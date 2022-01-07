@@ -316,10 +316,10 @@ func Test12IgnoringMostSignificantBits(t *testing.T) {
 
 func BenchmarkFloat64Increment(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		one := 1.0
+		step := 0.1
 		counter := 0.0
 		for x := 0; x < 100000; x++ {
-			counter += one
+			counter += step
 		}
 	}
 }
@@ -350,6 +350,68 @@ func BenchmarkDecodeEncodeIncrementX2(b *testing.B) {
 		counter := toyfloat12x2.Encode(0.0)
 		for x := 0; x < 100000; x++ {
 			counter = toyfloat12x2.Encode(toyfloat12x2.Decode(counter) + step)
+		}
+	}
+}
+
+func BenchmarkGetDelta(b *testing.B) {
+	toyfloat12, e := NewTypeX4(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		step := uint16(7)
+		last := uint16(i)
+		for x := 0; x < 100000; x++ {
+			kindOfRandom := last + step
+			_ = toyfloat12.GetIntegerDelta(last, kindOfRandom)
+			last = kindOfRandom
+		}
+	}
+}
+
+func BenchmarkGetDeltaX2(b *testing.B) {
+	toyfloat12x2, e := NewTypeX2(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		step := uint16(7)
+		last := uint16(i)
+		for x := 0; x < 100000; x++ {
+			kindOfRandom := last + step
+			_ = toyfloat12x2.GetIntegerDelta(last, kindOfRandom)
+			last = kindOfRandom
+		}
+	}
+}
+
+func BenchmarkUseDelta(b *testing.B) {
+	toyfloat12, e := NewTypeX4(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		last := uint16(i)
+		for x := -50000; x < 50000; x++ {
+			last = toyfloat12.UseIntegerDelta(last, x)
+		}
+	}
+}
+
+func BenchmarkUseDeltaX2(b *testing.B) {
+	toyfloat12x2, e := NewTypeX2(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		last := uint16(i)
+		for x := -50000; x < 50000; x++ {
+			last = toyfloat12x2.UseIntegerDelta(last, x)
 		}
 	}
 }
