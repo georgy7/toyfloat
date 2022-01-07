@@ -161,7 +161,6 @@ func decode(tf uint16, s *Type) float64 {
 
 func encodeInnerValue(inner float64, s *Type) uint16 {
 	mMax := s.twoPowerM - 1.0
-
 	internalMaximum := decodeSignificand(mMax, s.dsFactor)
 	internalMaximum *= s.xc.scales[getMaxScaleIndex(s)]
 
@@ -279,7 +278,7 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 		diffOrNegativeSum = -diffOrNegativeSum
 	}
 
-	// diff[OrNegativeSum] + absLast = absX	(sameSign)
+	// diff[OrNegativeSum] + absLast = absX (sameSign is true)
 	// [diffOr]NegativeSum + absLast = -absX - 1
 
 	r := diffOrNegativeSum + int(abs(last, s.minus))

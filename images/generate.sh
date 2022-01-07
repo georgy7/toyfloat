@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 # sudo apt install dvipng
 
 latex -output-format=dvi formula.tex
-dvipng -bg 'rgb 0.9 0.9 0.9' -o formula.png formula.dvi
+dvipng -D 130 -bg 'rgb 0.9 0.9 0.9' -o formula.png formula.dvi
 
 # sudo python3 -m pip install matplotlib
 

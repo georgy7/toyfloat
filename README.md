@@ -1,6 +1,6 @@
 # Toyfloat
 
-It encodes and decodes floating-point numbers with a width of 4 to 16 bits.
+It encodes and decodes floating-point numbers with a width of 3 to 16 bits.
 
 Expected applications:
 
@@ -10,7 +10,7 @@ Expected applications:
 It has:
 
 * exact 0, 1, -1
-* no NaN
+* no NaN, -Inf, +Inf
 * values, that are in range about:
   * (-256, +256) for 4-bit exponent
   * (-4, +4) for 3-bit exponent
@@ -19,6 +19,8 @@ It has:
 ![Formula](images/formula.png)
 
 ```
+Examples:
+
 ____ sxxx xmmm mmmm - 12-bit
 ____ xxxx mmmm mmmm - 12-bit unsigned
 ___s xxxx mmmm mmmm - 13-bit
@@ -27,6 +29,12 @@ _sxx xmmm mmmm mmmm - 15-bit with 3-bit exponent
 ```
 
 ![Precision graph](images/comparison.png)
+
+Base 3 in 2-bit exponent provides a higher density
+of values close to zero and a wider range,
+at the cost of reduced precision of values greater than 1/3.
+
+![Base 2 and base 3 exponent comparison](images/precision15x2_b2b3.png)
 
 ## Usage
 
