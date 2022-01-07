@@ -133,19 +133,16 @@ func encode(value float64, settings *Type) uint16 {
 	return encodeInnerValue(a+vReversedC, settings)
 }
 
-func decode(tf uint16, settings *Type) float64 {
-	a := settings.xc.scales[0]
+func decode(tf uint16, s *Type) float64 {
+	a := s.xc.scales[0]
 	c := 1.0 / (1.0 - a)
 
-	xShift, xMask := settings.mSize, settings.xc.xMask
-	mMask := settings.mMask
-
-	x := int((tf>>xShift)&xMask) + settings.xc.minExponent
+	x := int((tf>>s.mSize)&s.xc.xMask) + s.xc.minExponent
 
 	significand := decodeSignificand(
-		float64(tf&mMask), settings.twoPowerM, settings.xc.base3)
+		float64(tf&s.mMask), s.twoPowerM, s.xc.base3)
 
-	r := significand * getScale(x, settings)
+	r := significand * getScale(x, s)
 	r = (r - a) * c
 
 	// The problem only appeared with base three exponent.
@@ -153,10 +150,9 @@ func decode(tf uint16, settings *Type) float64 {
 		r = 1.0
 	}
 
-	if 0b0 != tf&settings.minus {
+	if 0b0 != tf&s.minus {
 		return -r
 	}
-
 	return r
 }
 
@@ -175,17 +171,15 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	xBias := s.xc.minExponent
 	binaryExponent := uint16(x-xBias) << s.mSize
 
-	normalized := inner / scale
-
-	mFloat := encodeSignificand(normalized, s)
-
+	significand := inner / scale
+	mFloat := encodeSignificand(significand, s)
 	binarySignificand := uint16(math.Min(math.Round(mFloat), mMax))
 
 	return binarySignificand | binaryExponent
 }
 
-func encodeSignificand(normalized float64, s *Type) float64 {
-	mFloat := normalized - 1.0
+func encodeSignificand(significand float64, s *Type) float64 {
+	mFloat := significand - 1.0
 	if s.xc.base3 {
 		return mFloat * powerOfTwo(s.mSize-1)
 	}
