@@ -9,11 +9,13 @@ import (
 
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
-	mSize     int
-	minus     uint16
-	mMask     uint16
-	twoPowerM float64
-	xc        xConstants
+	mSize             int
+	minus             uint16
+	mMask             uint16
+	twoPowerM         float64
+	dsFactor          float64
+	getExponentFactor float64
+	xc                xConstants
 }
 
 func NewTypeX2(length int, signed bool) (Type, error) {
@@ -37,7 +39,7 @@ func (t *Type) Decode(x uint16) float64 {
 }
 
 func (t *Type) GetIntegerDelta(last uint16, x uint16) int {
-	return encodeDelta(last, x, t)
+	return encodeDelta(last, x, t.minus)
 }
 
 func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
@@ -92,10 +94,12 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 	}
 
 	return Type{
-		mSize:     mSize,
-		minus:     minus,
-		mMask:     getOneBits(mSize),
-		twoPowerM: powerOfTwo(mSize),
+		mSize:             mSize,
+		minus:             minus,
+		mMask:             getOneBits(mSize),
+		twoPowerM:         powerOfTwo(mSize),
+		dsFactor:          makeDecodeSignificandFactor(mSize, b3),
+		getExponentFactor: makeGetExponentFactor(mSize, b3),
 		xc: xConstants{
 			xMask:       getOneBits(xSize),
 			xSize:       xSize,
@@ -137,12 +141,11 @@ func decode(tf uint16, s *Type) float64 {
 	a := s.xc.scales[0]
 	c := 1.0 / (1.0 - a)
 
-	x := int((tf>>s.mSize)&s.xc.xMask) + s.xc.minExponent
+	scale := s.xc.scales[int((tf>>s.mSize)&s.xc.xMask)]
 
-	significand := decodeSignificand(
-		float64(tf&s.mMask), s.twoPowerM, s.xc.base3)
+	significand := decodeSignificand(float64(tf&s.mMask), s.dsFactor)
 
-	r := significand * getScale(x, s)
+	r := significand * scale
 	r = (r - a) * c
 
 	// The problem only appeared with base three exponent.
@@ -150,7 +153,7 @@ func decode(tf uint16, s *Type) float64 {
 		r = 1.0
 	}
 
-	if 0b0 != tf&s.minus {
+	if isNegative(tf, s.minus) {
 		return -r
 	}
 	return r
@@ -159,8 +162,8 @@ func decode(tf uint16, s *Type) float64 {
 func encodeInnerValue(inner float64, s *Type) uint16 {
 	mMax := s.twoPowerM - 1.0
 
-	internalMaximum := decodeSignificand(mMax, s.twoPowerM, s.xc.base3)
-	internalMaximum *= getScale(s.xc.maxExponent, s)
+	internalMaximum := decodeSignificand(mMax, s.dsFactor)
+	internalMaximum *= s.xc.scales[getMaxScaleIndex(s)]
 
 	if inner >= internalMaximum {
 		return (s.xc.xMask << s.mSize) | s.mMask
@@ -173,7 +176,12 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 
 	significand := inner / scale
 	mFloat := encodeSignificand(significand, s)
-	binarySignificand := uint16(math.Min(math.Round(mFloat), mMax))
+	binarySignificand := uint16(math.Round(mFloat))
+
+	intMMax := (uint16(1) << s.mSize) - 1
+	if binarySignificand > intMMax {
+		binarySignificand = intMMax
+	}
 
 	return binarySignificand | binaryExponent
 }
@@ -186,34 +194,39 @@ func encodeSignificand(significand float64, s *Type) float64 {
 	return mFloat * s.twoPowerM
 }
 
-func decodeSignificand(m, twoPowerM float64, base3 bool) float64 {
-	r := m
+func decodeSignificand(m, dsFactor float64) float64 {
+	return 1.0 + m*dsFactor
+}
+
+func makeDecodeSignificandFactor(mSize int, base3 bool) float64 {
 	if base3 {
-		r /= twoPowerM * 0.5
-	} else {
-		r /= twoPowerM
+		return 1.0 / powerOfTwo(mSize-1)
 	}
-	return 1.0 + r
+	return 1.0 / powerOfTwo(mSize)
+}
+
+func makeGetExponentFactor(mSize int, base3 bool) float64 {
+	eps := 0.5 / powerOfTwo(mSize)
+
+	base := 2.0
+	if base3 {
+		base = 3.0
+	}
+
+	return base - ((base - 1) * eps)
 }
 
 func getExponent(innerValue float64, s *Type) (int, float64) {
 	modulus := math.Abs(innerValue)
+	factor := s.getExponentFactor
 
-	eps := 0.5 / s.twoPowerM
-	var factor float64
+	start := getMaxScaleIndex(s)
+	scale := s.xc.scales[start]
 
-	if s.xc.base3 {
-		factor = 3.0 - (2.0 * eps)
-	} else {
-		factor = 2.0 - eps
-	}
-
-	scale := getScale(s.xc.maxExponent, s)
-
-	for exp := s.xc.maxExponent; exp > s.xc.minExponent; exp-- {
-		smallerScale := getScale(exp-1, s)
+	for i := start; i >= 1; i-- {
+		smallerScale := s.xc.scales[i-1]
 		if factor*smallerScale <= modulus {
-			return exp, scale
+			return s.xc.minExponent + i, scale
 		}
 
 		scale = smallerScale
@@ -222,25 +235,25 @@ func getExponent(innerValue float64, s *Type) (int, float64) {
 	return s.xc.minExponent, scale
 }
 
-func getScale(x int, s *Type) float64 {
-	index := x - s.xc.minExponent
-	if index <= 0 {
-		return s.xc.scales[0]
+func getMaxScaleIndex(s *Type) int {
+	r := s.xc.maxExponent - s.xc.minExponent
+	if r >= len(s.xc.scales) {
+		return len(s.xc.scales) - 1
 	}
-	return s.xc.scales[index%len(s.xc.scales)]
+	return r
 }
 
-func encodeDelta(last uint16, x uint16, settings *Type) int {
-	lastIsNegative := isNegative(last, settings)
-	xIsNegative := isNegative(x, settings)
+func encodeDelta(last, x, minus uint16) int {
+	lastIsNegative := isNegative(last, minus)
+	xIsNegative := isNegative(x, minus)
 	sameSign := lastIsNegative == xIsNegative
 
-	absLast := int(abs(last, settings))
-	absX := int(abs(x, settings))
+	absLast := int(abs(last, minus))
+	absX := int(abs(x, minus))
 
 	if sameSign {
 		diff := absX - absLast
-		if xIsNegative {
+		if lastIsNegative {
 			return -diff
 		}
 		return diff
@@ -259,34 +272,48 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 		return last
 	}
 
-	absLast := int(abs(last, s))
+	lastIsNegative := isNegative(last, s.minus)
 
-	maxValue := (s.xc.xMask << s.mSize) | s.mMask
+	diffOrNegativeSum := delta
+	if lastIsNegative {
+		diffOrNegativeSum = -diffOrNegativeSum
+	}
 
-	if isNegative(last, s) {
-		absX := min(absLast-delta, int(maxValue))
-		if absX >= 0 {
-			return s.minus | uint16(absX)
+	// diff[OrNegativeSum] + absLast = absX	(sameSign)
+	// [diffOr]NegativeSum + absLast = -absX - 1
+
+	r := diffOrNegativeSum + int(abs(last, s.minus))
+	sameSign := r >= 0
+
+	maxValue := int((s.xc.xMask << s.mSize) | s.mMask)
+
+	if sameSign {
+		rLimited := uint16(min(r, maxValue))
+		if lastIsNegative {
+			return s.minus | rLimited
 		}
-		return uint16(min(-(absX + 1), int(maxValue)))
+		return rLimited
 	}
 
-	absX := min(absLast+delta, int(maxValue))
-	if absX >= 0 {
-		return uint16(absX)
-	} else if s.minus == 0b0 {
+	if !lastIsNegative && (s.minus == 0b0) {
 		return 0b0
-	} else {
-		return s.minus | uint16(min(-(absX+1), int(maxValue)))
 	}
+
+	rLimited := uint16(min(-r-1, maxValue))
+
+	if lastIsNegative {
+		return rLimited
+	}
+
+	return s.minus | rLimited
 }
 
-func isNegative(tf uint16, settings *Type) bool {
-	return 0b0 != tf&(settings.minus)
+func isNegative(tf, minus uint16) bool {
+	return 0b0 != tf&minus
 }
 
-func abs(tf uint16, settings *Type) uint16 {
-	return tf & (^settings.minus)
+func abs(tf, minus uint16) uint16 {
+	return tf & (^minus)
 }
 
 func powerOfTwo(x int) float64 {
