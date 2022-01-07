@@ -84,7 +84,11 @@ func newSettings(length int, xSize, minX int, b3, signed bool) (Type, error) {
 
 	var scales [16]float64
 	for x := minX; x <= maxX; x++ {
-		scales[x-minX] = calculateScale(b3, x)
+		base := 2.0
+		if b3 {
+			base = 3.0
+		}
+		scales[x-minX] = math.Pow(base, float64(x))
 	}
 
 	return Type{mSize, minus, mMask,
@@ -243,32 +247,6 @@ func powerOfTwo(x int) float64 {
 		return 1.0 / float64(int(1)<<-x)
 	}
 	return float64(int(1) << x)
-}
-
-func powerOfThree(x int) float64 {
-	root := x < 0
-
-	absX := x
-	if root {
-		absX = -x
-	}
-
-	rInt := 1
-	for i := 0; i < absX; i++ {
-		rInt *= 3
-	}
-
-	if root {
-		return 1.0 / float64(rInt)
-	}
-	return float64(rInt)
-}
-
-func calculateScale(base3 bool, x int) float64 {
-	if base3 {
-		return powerOfThree(x)
-	}
-	return powerOfTwo(x)
 }
 
 func getScale(x int, s *Type) float64 {
