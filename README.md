@@ -32,7 +32,7 @@ _sxx xmmm mmmm mmmm - 15-bit with 3-bit exponent
 
 Base 3 in 2-bit exponent provides a higher density
 of values close to zero and a wider range,
-at the cost of reduced precision of values greater than 1/3.
+at the cost of reduced precision of values greater than one-third.
 
 ![Base 2 and base 3 exponent comparison](images/precision15x2_b2b3.png)
 

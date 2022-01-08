@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.9.0] - 2022-01-09
 ### Changed
-- It works 15% faster.
+- It is 25% faster.
 
 ## [1.8.0] - 2022-01-05
 ### Added

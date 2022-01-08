@@ -1129,6 +1129,36 @@ func Test4X2NaNConvertedToZero(t *testing.T) {
 	}
 }
 
+func Test4X2IgnoringMostSignificantBits(t *testing.T) {
+	toyfloat4x2 := makeTypeX2(4, true, t)
+
+	for f := -4.0; f <= 4.0; f += 0.01 {
+		toy := toyfloat4x2.Encode(f)
+		original := toyfloat4x2.Decode(toy)
+
+		if 0xFFF0&toy != 0x0 {
+			t.Fatalf("%.4f -> 0b%b (has extra bits)", f, toy)
+		}
+
+		for m := 0x1; m <= 0xFFF; m++ {
+			modification := uint16(m) << 4
+			toyModified := toy | modification
+			modified := toyfloat4x2.Decode(toyModified)
+
+			if toy == toyModified {
+				t.Fatalf("This test is broken. "+
+					"Toy: 0b%b. Modification: 0b%b.",
+					toy, modification)
+			}
+
+			if modified != original {
+				t.Fatalf("%.4f != %.4f, modification: 0b%b",
+					modified, original, modification)
+			}
+		}
+	}
+}
+
 // ------------------------
 
 func TestEncodeDecodeStability(t *testing.T) {
