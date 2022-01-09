@@ -46,6 +46,22 @@ func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
 	return decodeDelta(last, delta, t)
 }
 
+// Abs returns encoded absolute value of encoded argument.
+func (t *Type) Abs(x uint16) uint16 {
+	return abs(x, t.minus)
+}
+
+// MinValue returns zero for unsigned types and negative
+// with maximum absolute value for signed types.
+func (t *Type) MinValue() float64 {
+	return t.minValue
+}
+
+// MaxValue returns maximum value of the type.
+func (t *Type) MaxValue() float64 {
+	return t.maxValue
+}
+
 // ----------------
 // Implementation:
 
@@ -201,6 +217,14 @@ func decodeSignificand(m, dsFactor float64) float64 {
 
 func makeDecodeSignificandFactor(mSize uint8, base3 bool) float64 {
 	if base3 {
+		// (b-1) * 1/(2^M)
+		// (3-1) * 1/(2^M)
+		// (2^1) * 1/(2^M)
+		// (2^1) / (2^M)
+		// (2^1) * (2^-M)
+		// 2^(1-M)
+		// 1 / 2^(-(1-M))
+		// 1 / 2^(M-1))
 		return 1.0 / powerOfTwo(mSize-1)
 	}
 	return 1.0 / powerOfTwo(mSize)

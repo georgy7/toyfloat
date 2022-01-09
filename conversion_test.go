@@ -170,9 +170,48 @@ func Test12MinusOne(t *testing.T) {
 	}
 }
 
+func Test12Abs(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+	input := toyfloat12.Encode(12.344)
+	result := toyfloat12.Abs(input)
+	if result != input {
+		t.Fatalf("Abs(positive): %d != %d", result, input)
+	}
+
+	input = toyfloat12.Encode(-15.2)
+	result = toyfloat12.Abs(input)
+
+	const eps = 0.0001
+	want := math.Abs(toyfloat12.Decode(input))
+	got := toyfloat12.Decode(result)
+
+	if math.Abs(got-want) > eps {
+		t.Fatalf("Abs(negative): %f != %f", got, want)
+	}
+}
+
+func Test12MaxValue(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+	const expected = 255.99607843137255
+	const eps = 0.0001
+	got := toyfloat12.MaxValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
+func Test12MinValue(t *testing.T) {
+	toyfloat12 := makeTypeX4(12, true, t)
+	const expected = -255.99607843137255
+	const eps = 0.0001
+	got := toyfloat12.MinValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
 func Test12PositiveOverflow(t *testing.T) {
 	toyfloat12 := makeTypeX4(12, true, t)
-
 	const expected = 255.99607843137255
 	const eps = 0.0001
 
@@ -191,7 +230,6 @@ func Test12PositiveOverflow(t *testing.T) {
 
 func Test12NegativeOverflow(t *testing.T) {
 	toyfloat12 := makeTypeX4(12, true, t)
-
 	const expected = -255.99607843137255
 	const eps = 0.0001
 
@@ -210,7 +248,6 @@ func Test12NegativeOverflow(t *testing.T) {
 
 func Test12PositiveInfinity(t *testing.T) {
 	toyfloat12 := makeTypeX4(12, true, t)
-
 	const expected = 255.99607843137255
 	const eps = 0.0001
 
@@ -227,7 +264,6 @@ func Test12PositiveInfinity(t *testing.T) {
 
 func Test12NegativeInfinity(t *testing.T) {
 	toyfloat12 := makeTypeX4(12, true, t)
-
 	const expected = -255.99607843137255
 	const eps = 0.0001
 
@@ -460,9 +496,26 @@ func TestUnsigned12PlusOne(t *testing.T) {
 	}
 }
 
+func TestUnsigned12MaxValue(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+	const expected = 256.4980392156863
+	const eps = 0.0001
+	got := toyfloat12u.MaxValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
+func TestUnsigned12MinValue(t *testing.T) {
+	toyfloat12u := makeTypeX4(12, false, t)
+	got := toyfloat12u.MinValue()
+	if got != 0 {
+		t.Fatalf("got %f, expected %f", got, 0.0)
+	}
+}
+
 func TestUnsigned12PositiveOverflow(t *testing.T) {
 	toyfloat12u := makeTypeX4(12, false, t)
-
 	const expected = 256.4980392156863
 	const eps = 0.0001
 
@@ -481,7 +534,6 @@ func TestUnsigned12PositiveOverflow(t *testing.T) {
 
 func TestUnsigned12PositiveInfinity(t *testing.T) {
 	toyfloat12u := makeTypeX4(12, false, t)
-
 	const expected = 256.4980392156863
 	const eps = 0.0001
 
@@ -873,9 +925,28 @@ func Test15X3MinusOne(t *testing.T) {
 	}
 }
 
+func Test15X3MaxValue(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+	const expected = 4.046627
+	const eps = 0.0001
+	got := toyfloat15x3.MaxValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
+func Test15X3MinValue(t *testing.T) {
+	toyfloat15x3 := makeTypeX3(15, true, t)
+	const expected = -4.046627
+	const eps = 0.0001
+	got := toyfloat15x3.MinValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
 func Test15X3PositiveOverflow(t *testing.T) {
 	toyfloat15x3 := makeTypeX3(15, true, t)
-
 	const expected = 4.046627
 	const eps = 0.0001
 
@@ -894,7 +965,6 @@ func Test15X3PositiveOverflow(t *testing.T) {
 
 func Test15X3NegativeOverflow(t *testing.T) {
 	toyfloat15x3 := makeTypeX3(15, true, t)
-
 	const expected = -4.046627
 	const eps = 0.0001
 
@@ -913,7 +983,6 @@ func Test15X3NegativeOverflow(t *testing.T) {
 
 func Test15X3PositiveInfinity(t *testing.T) {
 	toyfloat15x3 := makeTypeX3(15, true, t)
-
 	const expected = 4.046627
 	const eps = 0.0001
 
@@ -930,7 +999,6 @@ func Test15X3PositiveInfinity(t *testing.T) {
 
 func Test15X3NegativeInfinity(t *testing.T) {
 	toyfloat15x3 := makeTypeX3(15, true, t)
-
 	const expected = -4.046627
 	const eps = 0.0001
 
@@ -1071,9 +1139,28 @@ func Test4X2MinusOne(t *testing.T) {
 	}
 }
 
+func Test4X2MaxValue(t *testing.T) {
+	toyfloat4x2 := makeTypeX2(4, true, t)
+	const expected = 2.0384615384615383
+	const eps = 0.0001
+	got := toyfloat4x2.MaxValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
+func Test4X2MinValue(t *testing.T) {
+	toyfloat4x2 := makeTypeX2(4, true, t)
+	const expected = -2.0384615384615383
+	const eps = 0.0001
+	got := toyfloat4x2.MinValue()
+	if math.Abs(got-expected) > eps {
+		t.Fatalf("got %f, expected %f", got, expected)
+	}
+}
+
 func Test4X2PositiveOverflow(t *testing.T) {
 	toyfloat4x2 := makeTypeX2(4, true, t)
-
 	const expected = 2.0384615384615383
 	const eps = 0.0001
 
@@ -1092,7 +1179,6 @@ func Test4X2PositiveOverflow(t *testing.T) {
 
 func Test4X2NegativeOverflow(t *testing.T) {
 	toyfloat4x2 := makeTypeX2(4, true, t)
-
 	const expected = -2.0384615384615383
 	const eps = 0.0001
 
@@ -1111,7 +1197,6 @@ func Test4X2NegativeOverflow(t *testing.T) {
 
 func Test4X2PositiveInfinity(t *testing.T) {
 	toyfloat4x2 := makeTypeX2(4, true, t)
-
 	const expected = 2.0384615384615383
 	const eps = 0.0001
 
@@ -1128,7 +1213,6 @@ func Test4X2PositiveInfinity(t *testing.T) {
 
 func Test4X2NegativeInfinity(t *testing.T) {
 	toyfloat4x2 := makeTypeX2(4, true, t)
-
 	const expected = -2.0384615384615383
 	const eps = 0.0001
 
