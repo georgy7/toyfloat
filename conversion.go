@@ -89,22 +89,21 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 		return Type{}, errors.New("mantissa must be at least 1 bit wide")
 	}
 
-	if (xSize >= 16) || ((int(1) << xSize) > scaleArraySize) {
-		return Type{}, errors.New("such big exponents are not supported")
-	}
-
 	mSize := length - (xSize + signSize)
+
+	if (xSize >= 16) || ((int(1) << xSize) > scaleArraySize) || (mSize >= 16) {
+		return Type{}, errors.New("library Toyfloat is broken")
+	}
 
 	settings := Type{
 		mSize:         mSize,
 		minus:         uint16(0),
-		mMask:         getOneBits(mSize),
+		mMask:         (uint16(1) << mSize) - 1,
 		twoPowerMSize: powerOfTwo(mSize),
 		dsFactor:      makeDecodeSignificandFactor(mSize, b3),
-		boundary:      makeBoundaryBetweenExponents(mSize, b3),
 		xc: xConstants{
 			xSize: xSize,
-			xMask: getOneBits(xSize),
+			xMask: (uint16(1) << xSize) - 1,
 			base3: b3,
 		}}
 
@@ -119,12 +118,14 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 		base = 3.0
 	}
 
+	settings.boundary = makeExponentBoundary(settings.twoPowerMSize, base)
+
 	for x := minX; x <= maxX; x++ {
 		settings.xc.scale[x-minX] = math.Pow(base, float64(x))
 	}
 
-	mMax := powerOfTwo(mSize) - 1.0
-	maxScale := settings.xc.scale[maxX-minX]
+	mMax := settings.twoPowerMSize - 1.0
+	maxScale := settings.xc.scale[settings.xc.xMask&maxPossibleScaleIndex]
 	internalMaximum := decodeSignificand(mMax, settings.dsFactor) * maxScale
 
 	a := settings.xc.scale[0]
@@ -137,13 +138,6 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	}
 
 	return settings, nil
-}
-
-func getOneBits(bits uint8) uint16 {
-	if bits >= 16 {
-		return ^uint16(0)
-	}
-	return (uint16(1) << bits) - 1
 }
 
 func encode(value float64, settings *Type) uint16 {
@@ -230,13 +224,8 @@ func makeDecodeSignificandFactor(mSize uint8, base3 bool) float64 {
 	return 1.0 / powerOfTwo(mSize)
 }
 
-func makeBoundaryBetweenExponents(mSize uint8, base3 bool) float64 {
-	base := 2.0
-	if base3 {
-		base = 3.0
-	}
-
-	mDiv2m := (powerOfTwo(mSize) - 0.5) / powerOfTwo(mSize)
+func makeExponentBoundary(twoPowerMSize, base float64) float64 {
+	mDiv2m := (twoPowerMSize - 0.5) / twoPowerMSize
 
 	// This is the part (1 + (b - 1) * m/(2^M)) of the formula,
 	// that should be rounded to a greater exponent.
@@ -247,10 +236,10 @@ func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
 	absValue := math.Abs(inner)
 	factor := s.boundary
 
-	start := getMaxScaleIndex(s)
+	maxScaleIndex := s.xc.xMask & maxPossibleScaleIndex
 
 	var result uint16
-	for result = start; result > 0; result-- {
+	for result = maxScaleIndex; result > 0; result-- {
 		smallerScale := s.xc.scale[result-1]
 		if factor*smallerScale <= absValue {
 			break
@@ -259,11 +248,6 @@ func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
 
 	scale := s.xc.scale[result]
 	return result << s.mSize, 1.0 / scale
-}
-
-func getMaxScaleIndex(s *Type) uint16 {
-	r := (uint16(1) << s.xc.xSize) - 1
-	return r & maxPossibleScaleIndex
 }
 
 func encodeDelta(last, x, minus uint16) int {

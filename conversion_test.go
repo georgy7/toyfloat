@@ -2030,8 +2030,13 @@ func TestReadme(t *testing.T) {
 	}
 
 	{
-		series := []float64{-0.0058, 0.01, 0.123, 0.134, 0.132, 0.144, 0.145, 0.140}
-		expected := []int{387, 414, 12, -2, 12, 1, -5}
+		series := []float64{
+			-0.0058, 0.01, -0.0058, 0.01, 0.066, 0.123,
+			0.134, 0.132, 0.144, 0.145, 0.140}
+
+		expected := []int{
+			387, -387, 387, 300, 114,
+			12, -2, 12, 1, -5}
 
 		previous := toyfloat12.Encode(series[0])
 		for i := 1; i < len(series); i++ {
