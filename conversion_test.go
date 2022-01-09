@@ -315,12 +315,10 @@ func Test12IgnoringMostSignificantBits(t *testing.T) {
 // ------------------------
 
 func BenchmarkFloat64Increment(b *testing.B) {
+	step := 0.1
+	counter := 0.0
 	for i := 0; i < b.N; i++ {
-		step := 0.1
-		counter := 0.0
-		for x := 0; x < 100000; x++ {
-			counter += step
-		}
+		counter += step
 	}
 }
 
@@ -330,12 +328,10 @@ func BenchmarkDecodeEncodeIncrement(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	step := 0.1
+	counter := toyfloat12.Encode(0.0)
 	for i := 0; i < b.N; i++ {
-		step := 0.1
-		counter := toyfloat12.Encode(0.0)
-		for x := 0; x < 100000; x++ {
-			counter = toyfloat12.Encode(toyfloat12.Decode(counter) + step)
-		}
+		counter = toyfloat12.Encode(toyfloat12.Decode(counter) + step)
 	}
 }
 
@@ -345,12 +341,10 @@ func BenchmarkDecodeEncodeIncrementX2(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	step := 0.0005
+	counter := toyfloat12x2.Encode(0.0)
 	for i := 0; i < b.N; i++ {
-		step := 0.0005
-		counter := toyfloat12x2.Encode(0.0)
-		for x := 0; x < 100000; x++ {
-			counter = toyfloat12x2.Encode(toyfloat12x2.Decode(counter) + step)
-		}
+		counter = toyfloat12x2.Encode(toyfloat12x2.Decode(counter) + step)
 	}
 }
 
@@ -360,14 +354,11 @@ func BenchmarkGetDelta(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	last := uint16(0)
 	for i := 0; i < b.N; i++ {
-		step := uint16(7)
-		last := uint16(i)
-		for x := 0; x < 100000; x++ {
-			kindOfRandom := last + step
-			_ = toyfloat12.GetIntegerDelta(last, kindOfRandom)
-			last = kindOfRandom
-		}
+		kindOfRandom := last + 7*uint16(i)
+		_ = toyfloat12.GetIntegerDelta(last, kindOfRandom)
+		last = kindOfRandom
 	}
 }
 
@@ -377,14 +368,11 @@ func BenchmarkGetDeltaX2(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	last := uint16(0)
 	for i := 0; i < b.N; i++ {
-		step := uint16(7)
-		last := uint16(i)
-		for x := 0; x < 100000; x++ {
-			kindOfRandom := last + step
-			_ = toyfloat12x2.GetIntegerDelta(last, kindOfRandom)
-			last = kindOfRandom
-		}
+		kindOfRandom := last + 7*uint16(i)
+		_ = toyfloat12x2.GetIntegerDelta(last, kindOfRandom)
+		last = kindOfRandom
 	}
 }
 
@@ -394,11 +382,9 @@ func BenchmarkUseDelta(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	last := uint16(0)
 	for i := 0; i < b.N; i++ {
-		last := uint16(i)
-		for x := -50000; x < 50000; x++ {
-			last = toyfloat12.UseIntegerDelta(last, x)
-		}
+		last = toyfloat12.UseIntegerDelta(last, i%255-128)
 	}
 }
 
@@ -408,11 +394,9 @@ func BenchmarkUseDeltaX2(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	last := uint16(0)
 	for i := 0; i < b.N; i++ {
-		last := uint16(i)
-		for x := -50000; x < 50000; x++ {
-			last = toyfloat12x2.UseIntegerDelta(last, x)
-		}
+		last = toyfloat12x2.UseIntegerDelta(last, i%255-128)
 	}
 }
 
@@ -1004,6 +988,49 @@ func Test15X3IgnoringMostSignificantBits(t *testing.T) {
 }
 
 // ------------------------
+
+func Test4X2Precision(t *testing.T) {
+	toyfloat4x2 := makeTypeX2(4, true, t)
+
+	a := math.Pow(3, -3)
+	c := 1.0 / (1.0 - a)
+
+	gap := 0.99
+	boundary1 := (math.Pow(3, -2) - a) * c
+	boundary2 := (math.Pow(3, -1) - a) * c
+	boundary3 := (math.Pow(3, 0) - a) * c
+
+	baseEps := (3.0 - 1.0) * (1.0 / math.Pow(2, 1))
+	eps1 := (baseEps * math.Pow(3, -3)) * c
+	eps2 := (baseEps * math.Pow(3, -2)) * c
+	eps3 := (baseEps * math.Pow(3, -1)) * c
+	eps4 := (baseEps * math.Pow(3, 0)) * c
+
+	check := func(msg string, result, input, diff, eps float64) {
+		if diff > eps {
+			t.Fatalf("%s: %f != %f, diff: %.16f > %.16f",
+				msg, result, input, diff, eps)
+		}
+	}
+
+	for input := -3.0; input <= 3.0; input += 0.1 {
+		tf := toyfloat4x2.Encode(input)
+		result := toyfloat4x2.Decode(tf)
+
+		diff := math.Abs(result - input)
+		absInput := math.Abs(input)
+
+		if absInput < boundary1*gap {
+			check("< b1", result, input, diff, eps1)
+		} else if absInput < boundary2*gap {
+			check("< b2", result, input, diff, eps2)
+		} else if absInput < boundary3*gap {
+			check("< b3", result, input, diff, eps3)
+		} else {
+			check(">= b3", result, input, diff, eps4)
+		}
+	}
+}
 
 func Test4X2Zero(t *testing.T) {
 	toyfloat4x2 := makeTypeX2(4, true, t)

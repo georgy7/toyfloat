@@ -9,13 +9,13 @@ import (
 
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
-	mSize         uint8
-	minus         uint16
-	mMask         uint16
-	twoPowerMSize float64
-	dsFactor      float64
-	boundary      float64
-	xc            xConstants
+	mSize              uint8
+	minus              uint16
+	mMask              uint16
+	twoPowerMSize      float64
+	minValue, maxValue float64
+	dsFactor, boundary float64
+	xc                 xConstants
 }
 
 func NewTypeX2(length int, signed bool) (Type, error) {
@@ -73,31 +73,15 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 		return Type{}, errors.New("mantissa must be at least 1 bit wide")
 	}
 
-	mSize := length - (xSize + signSize)
-
-	minus := uint16(0)
-	if signed {
-		minus = uint16(1) << (length - 1)
-	}
-
 	if (xSize >= 16) || ((int(1) << xSize) > scaleArraySize) {
 		return Type{}, errors.New("such big exponents are not supported")
 	}
 
-	maxX := minX + (int(1) << xSize) - 1
+	mSize := length - (xSize + signSize)
 
-	var scale [scaleArraySize]float64
-	for x := minX; x <= maxX; x++ {
-		base := 2.0
-		if b3 {
-			base = 3.0
-		}
-		scale[x-minX] = math.Pow(base, float64(x))
-	}
-
-	return Type{
+	settings := Type{
 		mSize:         mSize,
-		minus:         minus,
+		minus:         uint16(0),
 		mMask:         getOneBits(mSize),
 		twoPowerMSize: powerOfTwo(mSize),
 		dsFactor:      makeDecodeSignificandFactor(mSize, b3),
@@ -106,8 +90,37 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 			xSize: xSize,
 			xMask: getOneBits(xSize),
 			base3: b3,
-			scale: scale,
-		}}, nil
+		}}
+
+	if signed {
+		settings.minus = uint16(1) << (length - 1)
+	}
+
+	maxX := minX + (int(1) << xSize) - 1
+
+	base := 2.0
+	if b3 {
+		base = 3.0
+	}
+
+	for x := minX; x <= maxX; x++ {
+		settings.xc.scale[x-minX] = math.Pow(base, float64(x))
+	}
+
+	mMax := powerOfTwo(mSize) - 1.0
+	maxScale := settings.xc.scale[maxX-minX]
+	internalMaximum := decodeSignificand(mMax, settings.dsFactor) * maxScale
+
+	a := settings.xc.scale[0]
+	c := 1.0 / (1.0 - a)
+
+	settings.maxValue = (internalMaximum - a) * c
+	settings.minValue = 0.0
+	if signed {
+		settings.minValue = -settings.maxValue
+	}
+
+	return settings, nil
 }
 
 func getOneBits(bits uint8) uint16 {
@@ -120,12 +133,17 @@ func getOneBits(bits uint8) uint16 {
 func encode(value float64, settings *Type) uint16 {
 	if math.IsNaN(value) {
 		return 0x0
+	} else if value > settings.maxValue {
+		return (settings.xc.xMask << settings.mSize) | settings.mMask
 	}
 
 	negativeValue := value < 0
 
 	if negativeValue && (0b0 == settings.minus) {
 		return 0x0
+	} else if value < settings.minValue {
+		absValue := (settings.xc.xMask << settings.mSize) | settings.mMask
+		return settings.minus | absValue
 	}
 
 	a := settings.xc.scale[0]
@@ -145,8 +163,7 @@ func decode(tf uint16, s *Type) float64 {
 
 	significand := decodeSignificand(float64(tf&s.mMask), s.dsFactor)
 
-	r := significand * scale
-	r = (r - a) * c
+	r := ((significand * scale) - a) * c
 
 	// The problem only appeared with base three exponent.
 	if math.Abs(r-1.0) < 1e-14 {
@@ -160,30 +177,13 @@ func decode(tf uint16, s *Type) float64 {
 }
 
 func encodeInnerValue(inner float64, s *Type) uint16 {
-	mMax := s.twoPowerMSize - 1.0
-
-	maxScaleIndex := getMaxScaleIndex(s)
-	internalMaximum := decodeSignificand(mMax, s.dsFactor)
-	internalMaximum *= s.xc.scale[maxScaleIndex]
-
-	if inner >= internalMaximum {
-		return (s.xc.xMask << s.mSize) | s.mMask
-	}
-
-	binaryExponent, inverseScale := getBinaryExponent(inner, maxScaleIndex, s)
+	binaryExponent, inverseScale := getBinaryExponent(inner, s)
 
 	significand := inner * inverseScale
 	mFloat := encodeSignificand(significand, s)
 
 	// math.Round(x) = math.Floor(x + 0.5), x >= 0
-	binarySignificand := uint16(mFloat + 0.5)
-
-	// If method getBinaryExponent works as intended,
-	// this is always false.
-	if binarySignificand > s.mMask {
-		binarySignificand = s.mMask
-	}
-
+	binarySignificand := uint16(mFloat + 0.499999999999999999999)
 	return binarySignificand | binaryExponent
 }
 
@@ -219,27 +219,26 @@ func makeBoundaryBetweenExponents(mSize uint8, base3 bool) float64 {
 	return 1 + (base-1)*mDiv2m
 }
 
-func getBinaryExponent(inner float64, maxScaleIndex uint8, s *Type) (uint16, float64) {
-	modulus := math.Abs(inner)
+func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
+	absValue := math.Abs(inner)
 	factor := s.boundary
 
-	start := uint16(maxScaleIndex)
-	scale := s.xc.scale[start]
+	start := getMaxScaleIndex(s)
 
 	var result uint16
 	for result = start; result > 0; result-- {
 		smallerScale := s.xc.scale[result-1]
-		if factor*smallerScale <= modulus {
+		if factor*smallerScale <= absValue {
 			break
 		}
-		scale = smallerScale
 	}
 
+	scale := s.xc.scale[result]
 	return result << s.mSize, 1.0 / scale
 }
 
-func getMaxScaleIndex(s *Type) uint8 {
-	r := (uint8(1) << s.xc.xSize) - 1
+func getMaxScaleIndex(s *Type) uint16 {
+	r := (uint16(1) << s.xc.xSize) - 1
 	return r & maxPossibleScaleIndex
 }
 
