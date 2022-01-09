@@ -7,15 +7,19 @@ import (
 	"math"
 )
 
+const maxPossibleScaleIndex = 0xF
+const scaleArraySize = maxPossibleScaleIndex + 1
+
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
 	mSize              uint8
-	minus              uint16
-	mMask              uint16
+	minus, mMask       uint16
 	twoPowerMSize      float64
 	minValue, maxValue float64
 	dsFactor, boundary float64
-	xc                 xConstants
+	xMask              uint16
+	base3              bool
+	scale              [scaleArraySize]float64
 }
 
 func NewTypeX2(length int, signed bool) (Type, error) {
@@ -65,16 +69,6 @@ func (t *Type) MaxValue() float64 {
 // ----------------
 // Implementation:
 
-const maxPossibleScaleIndex = 0xF
-const scaleArraySize = maxPossibleScaleIndex + 1
-
-type xConstants struct {
-	xSize uint8
-	xMask uint16
-	base3 bool
-	scale [scaleArraySize]float64
-}
-
 func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	if length > 16 {
 		return Type{}, errors.New("maximum length is 16 bits")
@@ -101,11 +95,9 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 		mMask:         (uint16(1) << mSize) - 1,
 		twoPowerMSize: powerOfTwo(mSize),
 		dsFactor:      makeDecodeSignificandFactor(mSize, b3),
-		xc: xConstants{
-			xSize: xSize,
-			xMask: (uint16(1) << xSize) - 1,
-			base3: b3,
-		}}
+		xMask:         (uint16(1) << xSize) - 1,
+		base3:         b3,
+	}
 
 	if signed {
 		settings.minus = uint16(1) << (length - 1)
@@ -121,14 +113,14 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	settings.boundary = makeExponentBoundary(settings.twoPowerMSize, base)
 
 	for x := minX; x <= maxX; x++ {
-		settings.xc.scale[x-minX] = math.Pow(base, float64(x))
+		settings.scale[x-minX] = math.Pow(base, float64(x))
 	}
 
 	mMax := settings.twoPowerMSize - 1.0
-	maxScale := settings.xc.scale[settings.xc.xMask&maxPossibleScaleIndex]
+	maxScale := settings.scale[settings.xMask&maxPossibleScaleIndex]
 	internalMaximum := decodeSignificand(mMax, settings.dsFactor) * maxScale
 
-	a := settings.xc.scale[0]
+	a := settings.scale[0]
 	c := 1.0 / (1.0 - a)
 
 	settings.maxValue = (internalMaximum - a) * c
@@ -144,7 +136,7 @@ func encode(value float64, settings *Type) uint16 {
 	if math.IsNaN(value) {
 		return 0x0
 	} else if value > settings.maxValue {
-		return (settings.xc.xMask << settings.mSize) | settings.mMask
+		return (settings.xMask << settings.mSize) | settings.mMask
 	}
 
 	negativeValue := value < 0
@@ -152,11 +144,11 @@ func encode(value float64, settings *Type) uint16 {
 	if negativeValue && (0b0 == settings.minus) {
 		return 0x0
 	} else if value < settings.minValue {
-		absValue := (settings.xc.xMask << settings.mSize) | settings.mMask
+		absValue := (settings.xMask << settings.mSize) | settings.mMask
 		return settings.minus | absValue
 	}
 
-	a := settings.xc.scale[0]
+	a := settings.scale[0]
 	vReversedC := value * (1.0 - a)
 
 	if negativeValue {
@@ -166,10 +158,10 @@ func encode(value float64, settings *Type) uint16 {
 }
 
 func decode(tf uint16, s *Type) float64 {
-	a := s.xc.scale[0]
+	a := s.scale[0]
 	c := 1.0 / (1.0 - a)
 
-	scale := s.xc.scale[(tf>>s.mSize)&s.xc.xMask]
+	scale := s.scale[(tf>>s.mSize)&s.xMask]
 
 	significand := decodeSignificand(float64(tf&s.mMask), s.dsFactor)
 
@@ -193,13 +185,13 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	mFloat := encodeSignificand(significand, s)
 
 	// math.Round(x) = math.Floor(x + 0.5), x >= 0
-	binarySignificand := uint16(mFloat + 0.499999999999999999999)
+	binarySignificand := uint16(mFloat + 0.499999999999)
 	return binarySignificand | binaryExponent
 }
 
 func encodeSignificand(significand float64, s *Type) float64 {
 	mFloat := significand - 1.0
-	if s.xc.base3 {
+	if s.base3 {
 		return mFloat * powerOfTwo(s.mSize-1)
 	}
 	return mFloat * s.twoPowerMSize
@@ -236,17 +228,13 @@ func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
 	absValue := math.Abs(inner)
 	factor := s.boundary
 
-	maxScaleIndex := s.xc.xMask & maxPossibleScaleIndex
+	result := s.xMask & maxPossibleScaleIndex
 
-	var result uint16
-	for result = maxScaleIndex; result > 0; result-- {
-		smallerScale := s.xc.scale[result-1]
-		if factor*smallerScale <= absValue {
-			break
-		}
+	for (result > 0) && (factor*s.scale[result-1] > absValue) {
+		result--
 	}
 
-	scale := s.xc.scale[result]
+	scale := s.scale[result]
 	return result << s.mSize, 1.0 / scale
 }
 
@@ -292,7 +280,7 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 	r := diffOrNegativeSum + int(abs(last, s.minus))
 	sameSign := r >= 0
 
-	maxValue := (s.xc.xMask << s.mSize) | s.mMask
+	maxValue := (s.xMask << s.mSize) | s.mMask
 
 	if sameSign {
 		rLimited := min16u(uint16(r), maxValue)

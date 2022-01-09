@@ -70,19 +70,11 @@ func main() {
 	println()
 
 	toyfloat12, err12 := toyfloat.NewTypeX4(12, true)
-	toyfloat13, err13 := toyfloat.NewTypeX4(13, true)
-	toyfloat14, err14 := toyfloat.NewTypeX4(14, true)
-	toyfloat15x3, err15x3 := toyfloat.NewTypeX3(15, true)
 	toyfloat5x3, err5x3 := toyfloat.NewTypeX3(5, true)
-	toyfloat5x2, err5x2 := toyfloat.NewTypeX2(5, true)
 	toyfloat3x2u, err3x2u := toyfloat.NewTypeX2(3, false)
 
 	exitOnError(err12)
-	exitOnError(err13)
-	exitOnError(err14)
-	exitOnError(err15x3)
 	exitOnError(err5x3)
-	exitOnError(err5x2)
 	exitOnError(err3x2u)
 
 	const input = 1.567
@@ -92,25 +84,9 @@ func main() {
 	f := toyfloat12.Decode(tf)
 	report("12-bit signed", tf, f, input)
 
-	tf = toyfloat13.Encode(input)
-	f = toyfloat13.Decode(tf)
-	report("13-bit signed", tf, f, input)
-
-	tf = toyfloat14.Encode(input)
-	f = toyfloat14.Decode(tf)
-	report("14-bit signed", tf, f, input)
-
-	tf = toyfloat15x3.Encode(input)
-	f = toyfloat15x3.Decode(tf)
-	report("15-bit signed with 3-bit exponent", tf, f, input)
-
 	tf = toyfloat5x3.Encode(input)
 	f = toyfloat5x3.Decode(tf)
 	report("5-bit signed with 3-bit exponent", tf, f, input)
-
-	tf = toyfloat5x2.Encode(input)
-	f = toyfloat5x2.Decode(tf)
-	report("5-bit signed with 2-bit exponent", tf, f, input)
 
 	tf = toyfloat3x2u.Encode(input)
 	f = toyfloat3x2u.Decode(tf)
@@ -160,35 +136,11 @@ Encoded: 0x448
 Decoded: 1.564706
 Delta:   0.002294
 
-13-bit signed
--------------
-Encoded: 0x891
-Decoded: 1.568627
-Delta:   0.001627
-
-14-bit signed
--------------
-Encoded: 0x1121
-Decoded: 1.566667
-Delta:   0.000333
-
-15-bit signed with 3-bit exponent
----------------------------------
-Encoded: 0x3477
-Decoded: 1.566964
-Delta:   0.000036
-
 5-bit signed with 3-bit exponent
 --------------------------------
 Encoded: 0xD
 Decoded: 1.507937
 Delta:   0.059063
-
-5-bit signed with 2-bit exponent
---------------------------------
-Encoded: 0xD
-Decoded: 1.519231
-Delta:   0.047769
 
 3-bit unsigned with 2-bit exponent
 ----------------------------------
@@ -212,4 +164,16 @@ Delta encoding (12-bit)
          +12    +0.011765    0.144118
           +1    +0.000980    0.145098
           -5    -0.004902    0.140196
+```
+
+## Performance
+
+```
+BenchmarkFloat64Increment-8             1000000000               0.256 ns/op
+BenchmarkDecodeEncodeIncrement-8        50836251                23.0 ns/op
+BenchmarkDecodeEncodeIncrementX2-8      51007471                22.7 ns/op
+BenchmarkGetDelta-8                     334447234                3.59 ns/op
+BenchmarkGetDeltaX2-8                   321626664                3.70 ns/op
+BenchmarkUseDelta-8                     291171092                4.10 ns/op
+BenchmarkUseDeltaX2-8                   285746972                4.18 ns/op
 ```
