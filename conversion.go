@@ -161,7 +161,7 @@ func decode(tf uint16, s *Type) float64 {
 	a := s.scale[0]
 	c := 1.0 / (1.0 - a)
 
-	scale := s.scale[(tf>>s.mSize)&s.xMask]
+	scale := s.scale[(tf>>s.mSize)&(s.xMask&maxPossibleScaleIndex)]
 
 	significand := decodeSignificand(float64(tf&s.mMask), s.dsFactor)
 
