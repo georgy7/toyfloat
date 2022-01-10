@@ -43,9 +43,13 @@ func (t *Type) Decode(x uint16) float64 {
 }
 
 func (t *Type) GetIntegerDelta(last uint16, x uint16) int {
-	return encodeDelta(last, x, t.minus)
+	return encodeDelta(last, x, t)
 }
 
+// UseIntegerDelta returns a value, shifted to the specified number of steps.
+// It crops the value to minimum and maximum of the type.
+// This API allows you to use large deltas, however it does not
+// protect you from integer overflow.
 func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
 	return decodeDelta(last, delta, t)
 }
@@ -243,63 +247,39 @@ func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
 	return result << s.mSize, 1.0 / scale
 }
 
-func encodeDelta(last, x, minus uint16) int {
-	lastIsNegative := isNegative(last, minus)
-	xIsNegative := isNegative(x, minus)
-	sameSign := lastIsNegative == xIsNegative
-
-	absLast := int(abs(last, minus))
-	absX := int(abs(x, minus))
-
-	if sameSign {
-		diff := absX - absLast
-		if lastIsNegative {
-			return -diff
-		}
-		return diff
-	}
-
-	// the additional 1 is minus zero
-	sum := absX + 1 + absLast
-	if lastIsNegative {
-		return sum
-	}
-	return -sum
+func encodeDelta(last, x uint16, s *Type) int {
+	filter := s.minus | (s.xMask << s.mSize) | s.mMask
+	a := int(toSimple(last, s.minus) & filter)
+	b := int(toSimple(x, s.minus) & filter)
+	return b - a
 }
 
 func decodeDelta(last uint16, delta int, s *Type) uint16 {
-	lastIsNegative := isNegative(last, s.minus)
+	filter := s.minus | (s.xMask << s.mSize) | s.mMask
+	filteredSimpleLast := int(toSimple(last, s.minus) & filter)
 
-	diffOrNegativeSum := delta
-	if lastIsNegative {
-		diffOrNegativeSum = -diffOrNegativeSum
+	r := filteredSimpleLast + delta
+	if r < 0 {
+		r = 0
+	} else if r > int(filter) {
+		r = int(filter)
 	}
 
-	// diff[OrNegativeSum] + absLast = absX (sameSign is true)
-	// [diffOr]NegativeSum + absLast = -absX - 1
+	return fromSimple(uint16(r), s.minus)
+}
 
-	r := diffOrNegativeSum + int(abs(last, s.minus))
-	sameSign := r >= 0
-
-	maxValue := (s.xMask << s.mSize) | s.mMask
-
-	if sameSign {
-		rLimited := min16u(uint16(r), maxValue)
-		if lastIsNegative {
-			return s.minus | rLimited
-		}
-		return rLimited
+func toSimple(tf, minus uint16) uint16 {
+	if 0 == tf&minus {
+		return minus | tf
 	}
+	return ^tf
+}
 
-	if !lastIsNegative && (s.minus == 0b0) {
-		return 0b0
+func fromSimple(simple, minus uint16) uint16 {
+	if minus != simple&minus {
+		return ^simple
 	}
-
-	rLimited := min16u(uint16(-r-1), maxValue)
-	if lastIsNegative {
-		return rLimited
-	}
-	return s.minus | rLimited
+	return (^minus) & simple
 }
 
 func isNegative(tf, minus uint16) bool {
@@ -312,11 +292,4 @@ func abs(tf, minus uint16) uint16 {
 
 func powerOfTwo(x uint8) float64 {
 	return float64(int(1) << x)
-}
-
-func min16u(a, b uint16) uint16 {
-	if a < b {
-		return a
-	}
-	return b
 }
