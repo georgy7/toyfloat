@@ -12,14 +12,14 @@ const scaleArraySize = maxPossibleScaleIndex + 1
 
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
-	mSize              uint8
-	minus, mMask       uint16
-	twoPowerMSize      float64
-	minValue, maxValue float64
-	dsFactor, boundary float64
-	xMask              uint16
-	base3              bool
-	scale              [scaleArraySize]float64
+	mSize               uint8
+	minus, mMask        uint16
+	encodingDenominator float64
+	minValue, maxValue  float64
+	dsFactor, boundary  float64
+	xMask               uint16
+	base3               bool
+	scale               [scaleArraySize]float64
 }
 
 func NewTypeX2(length int, signed bool) (Type, error) {
@@ -90,13 +90,12 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	}
 
 	settings := Type{
-		mSize:         mSize,
-		minus:         uint16(0),
-		mMask:         (uint16(1) << mSize) - 1,
-		twoPowerMSize: powerOfTwo(mSize),
-		dsFactor:      makeDecodeSignificandFactor(mSize, b3),
-		xMask:         (uint16(1) << xSize) - 1,
-		base3:         b3,
+		mSize:    mSize,
+		minus:    uint16(0),
+		mMask:    (uint16(1) << mSize) - 1,
+		dsFactor: makeDecodeSignificandFactor(mSize, b3),
+		xMask:    (uint16(1) << xSize) - 1,
+		base3:    b3,
 	}
 
 	if signed {
@@ -106,17 +105,19 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	maxX := minX + (int(1) << xSize) - 1
 
 	base := 2.0
+	settings.encodingDenominator = powerOfTwo(mSize)
 	if b3 {
 		base = 3.0
+		settings.encodingDenominator = powerOfTwo(mSize - 1)
 	}
 
-	settings.boundary = makeExponentBoundary(settings.twoPowerMSize, base)
+	settings.boundary = makeExponentBoundary(powerOfTwo(mSize), base)
 
 	for x := minX; x <= maxX; x++ {
 		settings.scale[x-minX] = math.Pow(base, float64(x))
 	}
 
-	mMax := settings.twoPowerMSize - 1.0
+	mMax := powerOfTwo(mSize) - 1.0
 	maxScale := settings.scale[settings.xMask&maxPossibleScaleIndex]
 	internalMaximum := decodeSignificand(mMax, settings.dsFactor) * maxScale
 
@@ -137,21 +138,19 @@ func encode(value float64, settings *Type) uint16 {
 		return 0x0
 	} else if value > settings.maxValue {
 		return (settings.xMask << settings.mSize) | settings.mMask
-	}
-
-	negativeValue := value < 0
-
-	if negativeValue && (0b0 == settings.minus) {
-		return 0x0
-	} else if value < settings.minValue {
-		absValue := (settings.xMask << settings.mSize) | settings.mMask
-		return settings.minus | absValue
+	} else if value < 0 {
+		if 0b0 == settings.minus {
+			return 0x0
+		} else if value < settings.minValue {
+			absValue := (settings.xMask << settings.mSize) | settings.mMask
+			return settings.minus | absValue
+		}
 	}
 
 	a := settings.scale[0]
 	vReversedC := value * (1.0 - a)
 
-	if negativeValue {
+	if value < 0 {
 		return settings.minus | encodeInnerValue(a-vReversedC, settings)
 	}
 	return encodeInnerValue(a+vReversedC, settings)
@@ -180,19 +179,14 @@ func decode(tf uint16, s *Type) float64 {
 
 func encodeInnerValue(inner float64, s *Type) uint16 {
 	binaryExponent, inverseScale := getBinaryExponent(inner, s)
-
-	var significand float64
-	if s.base3 {
-		significand = powerOfTwo(s.mSize - 1)
-	} else {
-		significand = s.twoPowerMSize
-	}
-
-	significand *= (inner * inverseScale) - 1.0
+	denominator := s.encodingDenominator
 
 	// math.Round(x) = math.Floor(x + 0.5), x >= 0
-	binarySignificand := uint16(significand + 0.499999999999)
-	return binarySignificand | binaryExponent
+	const rounding = 0.499999999999
+
+	significand := denominator*inner*inverseScale - denominator + rounding
+
+	return uint16(significand) | binaryExponent
 }
 
 func decodeSignificand(m, dsFactor float64) float64 {

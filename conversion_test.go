@@ -350,37 +350,56 @@ func Test12IgnoringMostSignificantBits(t *testing.T) {
 
 // ------------------------
 
-func BenchmarkFloat64Increment(b *testing.B) {
-	step := 0.1
+func BenchmarkFloat64IncrementAsAReference(b *testing.B) {
 	counter := 0.0
 	for i := 0; i < b.N; i++ {
-		counter += step
+		counter++
 	}
 }
 
-func BenchmarkDecodeEncodeIncrement(b *testing.B) {
+func BenchmarkEncode(b *testing.B) {
 	toyfloat12, e := NewTypeX4(12, true)
 	if e != nil {
 		b.Fatal(e)
 	}
 
-	step := 0.1
-	counter := toyfloat12.Encode(0.0)
+	const scale = 256.0 / 10000
 	for i := 0; i < b.N; i++ {
-		counter = toyfloat12.Encode(toyfloat12.Decode(counter) + step)
+		_ = toyfloat12.Encode(scale * float64(i%10000))
 	}
 }
 
-func BenchmarkDecodeEncodeIncrementX2(b *testing.B) {
+func BenchmarkDecode(b *testing.B) {
+	toyfloat12, e := NewTypeX4(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		_ = toyfloat12.Decode(uint16(i))
+	}
+}
+
+func BenchmarkEncode12X2(b *testing.B) {
 	toyfloat12x2, e := NewTypeX2(12, true)
 	if e != nil {
 		b.Fatal(e)
 	}
 
-	step := 0.0005
-	counter := toyfloat12x2.Encode(0.0)
+	const scale = 3.0 / 10000
 	for i := 0; i < b.N; i++ {
-		counter = toyfloat12x2.Encode(toyfloat12x2.Decode(counter) + step)
+		_ = toyfloat12x2.Encode(scale * float64(i%10000))
+	}
+}
+
+func BenchmarkDecode12X2(b *testing.B) {
+	toyfloat12x2, e := NewTypeX2(12, true)
+	if e != nil {
+		b.Fatal(e)
+	}
+
+	for i := 0; i < b.N; i++ {
+		_ = toyfloat12x2.Decode(uint16(i))
 	}
 }
 
