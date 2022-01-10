@@ -181,20 +181,18 @@ func decode(tf uint16, s *Type) float64 {
 func encodeInnerValue(inner float64, s *Type) uint16 {
 	binaryExponent, inverseScale := getBinaryExponent(inner, s)
 
-	significand := inner * inverseScale
-	mFloat := encodeSignificand(significand, s)
+	var significand float64
+	if s.base3 {
+		significand = powerOfTwo(s.mSize - 1)
+	} else {
+		significand = s.twoPowerMSize
+	}
+
+	significand *= (inner * inverseScale) - 1.0
 
 	// math.Round(x) = math.Floor(x + 0.5), x >= 0
-	binarySignificand := uint16(mFloat + 0.499999999999)
+	binarySignificand := uint16(significand + 0.499999999999)
 	return binarySignificand | binaryExponent
-}
-
-func encodeSignificand(significand float64, s *Type) float64 {
-	mFloat := significand - 1.0
-	if s.base3 {
-		return mFloat * powerOfTwo(s.mSize-1)
-	}
-	return mFloat * s.twoPowerMSize
 }
 
 func decodeSignificand(m, dsFactor float64) float64 {
@@ -217,10 +215,9 @@ func makeDecodeSignificandFactor(mSize uint8, base3 bool) float64 {
 }
 
 func makeExponentBoundary(twoPowerMSize, base float64) float64 {
-	mDiv2m := (twoPowerMSize - 0.5) / twoPowerMSize
-
 	// This is the part (1 + (b - 1) * m/(2^M)) of the formula,
 	// that should be rounded to a greater exponent.
+	mDiv2m := (twoPowerMSize - 0.5) / twoPowerMSize
 	return 1 + (base-1)*mDiv2m
 }
 
