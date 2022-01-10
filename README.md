@@ -169,13 +169,13 @@ Delta encoding (12-bit)
 ## Performance
 
 ```
-BenchmarkFloat64IncrementAsAReference-8     1000000000           0.271 ns/op
-BenchmarkEncode-8                           100000000           11.1 ns/op
-BenchmarkDecode-8                           157778698            7.71 ns/op
-BenchmarkEncode12X2-8                       100000000           10.6 ns/op
-BenchmarkDecode12X2-8                       154553114            7.63 ns/op
-BenchmarkGetDelta-8                         320125124            3.75 ns/op
-BenchmarkGetDeltaX2-8                       313008476            4.24 ns/op
-BenchmarkUseDelta-8                         284612704            4.17 ns/op
-BenchmarkUseDeltaX2-8                       281423340            4.31 ns/op
+BenchmarkFloat64IncrementAsAReference-8     1000000000           0.265 ns/op
+BenchmarkEncode-8                           100000000           11.0 ns/op
+BenchmarkDecode-8                           270909399            4.42 ns/op
+BenchmarkEncode12X2-8                       100000000           10.5 ns/op
+BenchmarkDecode12X2-8                       291492045            4.02 ns/op
+BenchmarkGetDelta-8                         323413291            3.70 ns/op
+BenchmarkGetDeltaX2-8                       299300365            3.97 ns/op
+BenchmarkUseDelta-8                         297083494            4.09 ns/op
+BenchmarkUseDeltaX2-8                       244479758            4.89 ns/op
 ```

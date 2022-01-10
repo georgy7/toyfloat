@@ -167,7 +167,7 @@ func decode(tf uint16, s *Type) float64 {
 	r := ((significand * scale) - a) * c
 
 	// The problem only appeared with base three exponent.
-	if math.Abs(r-1.0) < 1e-14 {
+	if ((1.0 - 1e-14) < r) && (r < (1.0 + 1e-14)) {
 		r = 1.0
 	}
 
@@ -254,10 +254,6 @@ func encodeDelta(last, x, minus uint16) int {
 }
 
 func decodeDelta(last uint16, delta int, s *Type) uint16 {
-	if delta == 0 {
-		return last
-	}
-
 	lastIsNegative := isNegative(last, s.minus)
 
 	diffOrNegativeSum := delta
@@ -286,11 +282,9 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 	}
 
 	rLimited := min16u(uint16(-r-1), maxValue)
-
 	if lastIsNegative {
 		return rLimited
 	}
-
 	return s.minus | rLimited
 }
 
