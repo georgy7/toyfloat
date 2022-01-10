@@ -357,6 +357,33 @@ func BenchmarkFloat64IncrementAsAReference(b *testing.B) {
 	}
 }
 
+func BenchmarkCreateTypeX4(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, e := NewTypeX4(12, true)
+		if e != nil {
+			b.Fatal(e)
+		}
+	}
+}
+
+func BenchmarkCreateTypeX3(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, e := NewTypeX3(12, true)
+		if e != nil {
+			b.Fatal(e)
+		}
+	}
+}
+
+func BenchmarkCreateTypeX2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, e := NewTypeX2(12, true)
+		if e != nil {
+			b.Fatal(e)
+		}
+	}
+}
+
 func BenchmarkEncode(b *testing.B) {
 	toyfloat12, e := NewTypeX4(12, true)
 	if e != nil {

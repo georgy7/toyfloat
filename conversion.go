@@ -113,8 +113,22 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 
 	settings.boundary = makeExponentBoundary(powerOfTwo(mSize), base)
 
-	for x := minX; x <= maxX; x++ {
-		settings.scale[x-minX] = math.Pow(base, float64(x))
+	if b3 {
+		denominator := 3.0
+		for x := -1; x >= minX; x-- {
+			settings.scale[x-minX] = 1.0 / denominator
+			denominator *= 3.0
+		}
+		for x := 0; x <= maxX; x++ {
+			settings.scale[x-minX] = math.Pow(base, float64(x))
+		}
+	} else {
+		for x := minX; x < 0; x++ {
+			settings.scale[x-minX] = 1.0 / powerOfTwo(uint8(-x))
+		}
+		for x := 0; x <= maxX; x++ {
+			settings.scale[x-minX] = powerOfTwo(uint8(x))
+		}
 	}
 
 	mMax := powerOfTwo(mSize) - 1.0
