@@ -18,6 +18,7 @@ type Type struct {
 	minValue, maxValue  float64
 	dsFactor, boundary  float64
 	xMask               uint16
+	bitmask             uint16
 	base3               bool
 	scale               [scaleArraySize]float64
 }
@@ -101,6 +102,9 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	if signed {
 		settings.minus = uint16(1) << (length - 1)
 	}
+
+	settings.bitmask =
+		settings.minus | (settings.xMask << settings.mSize) | settings.mMask
 
 	maxX := minX + (int(1) << xSize) - 1
 
@@ -244,34 +248,32 @@ func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
 }
 
 func encodeDelta(last, x uint16, s *Type) int {
-	filter := s.minus | (s.xMask << s.mSize) | s.mMask
-	a := int(toSimple(last, s.minus) & filter)
-	b := int(toSimple(x, s.minus) & filter)
+	a := int(toComparable(last, s.minus) & s.bitmask)
+	b := int(toComparable(x, s.minus) & s.bitmask)
 	return b - a
 }
 
 func decodeDelta(last uint16, delta int, s *Type) uint16 {
-	filter := s.minus | (s.xMask << s.mSize) | s.mMask
-	filteredSimpleLast := int(toSimple(last, s.minus) & filter)
+	lastComparable := int(toComparable(last, s.minus) & s.bitmask)
 
 	r := uint16(0)
-	if delta > int(filter)-filteredSimpleLast {
-		r = filter
-	} else if delta >= -filteredSimpleLast {
-		r = uint16(filteredSimpleLast + delta)
+	if delta > int(s.bitmask)-lastComparable {
+		r = s.bitmask
+	} else if delta >= -lastComparable {
+		r = uint16(lastComparable + delta)
 	}
 
-	return fromSimple(r, s.minus)
+	return fromComparable(r, s.minus)
 }
 
-func toSimple(tf, minus uint16) uint16 {
+func toComparable(tf, minus uint16) uint16 {
 	if 0 == tf&minus {
 		return minus | tf
 	}
 	return ^tf
 }
 
-func fromSimple(simple, minus uint16) uint16 {
+func fromComparable(simple, minus uint16) uint16 {
 	if minus != simple&minus {
 		return ^simple
 	}

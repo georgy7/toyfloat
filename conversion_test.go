@@ -350,11 +350,18 @@ func Test12IgnoringMostSignificantBits(t *testing.T) {
 
 // ------------------------
 
+// An antidote for dead code elimination. Source:
+// https://stackoverflow.com/a/36975497/1240328
+// https://dave.cheney.net/2013/06/30/how-to-write-benchmarks-in-go
+var intResult int
+
 func BenchmarkFloat64IncrementAsAReference(b *testing.B) {
 	counter := 0.0
 	for i := 0; i < b.N; i++ {
 		counter++
 	}
+
+	intResult = int(counter)
 }
 
 func BenchmarkCreateTypeX4(b *testing.B) {
@@ -390,10 +397,12 @@ func BenchmarkEncode(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	r := uint16(0)
 	const scale = 256.0 / 10000
 	for i := 0; i < b.N; i++ {
-		_ = toyfloat12.Encode(scale * float64(i%10000))
+		r = toyfloat12.Encode(scale * float64(i%10000))
 	}
+	intResult = int(r)
 }
 
 func BenchmarkDecode(b *testing.B) {
@@ -402,9 +411,11 @@ func BenchmarkDecode(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	r := 0.0
 	for i := 0; i < b.N; i++ {
-		_ = toyfloat12.Decode(uint16(i))
+		r = toyfloat12.Decode(uint16(i))
 	}
+	intResult = int(r)
 }
 
 func BenchmarkEncode12X2(b *testing.B) {
@@ -413,10 +424,12 @@ func BenchmarkEncode12X2(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	r := uint16(0)
 	const scale = 3.0 / 10000
 	for i := 0; i < b.N; i++ {
-		_ = toyfloat12x2.Encode(scale * float64(i%10000))
+		r = toyfloat12x2.Encode(scale * float64(i%10000))
 	}
+	intResult = int(r)
 }
 
 func BenchmarkDecode12X2(b *testing.B) {
@@ -425,9 +438,11 @@ func BenchmarkDecode12X2(b *testing.B) {
 		b.Fatal(e)
 	}
 
+	r := 0.0
 	for i := 0; i < b.N; i++ {
-		_ = toyfloat12x2.Decode(uint16(i))
+		r = toyfloat12x2.Decode(uint16(i))
 	}
+	intResult = int(r)
 }
 
 func BenchmarkGetDelta(b *testing.B) {
@@ -437,11 +452,14 @@ func BenchmarkGetDelta(b *testing.B) {
 	}
 
 	last := uint16(0)
+	r := 0
 	for i := 0; i < b.N; i++ {
 		kindOfRandom := last + 7*uint16(i)
-		_ = toyfloat12.GetIntegerDelta(last, kindOfRandom)
+		r = toyfloat12.GetIntegerDelta(last, kindOfRandom)
 		last = kindOfRandom
 	}
+
+	intResult = r
 }
 
 func BenchmarkGetDeltaX2(b *testing.B) {
@@ -451,11 +469,14 @@ func BenchmarkGetDeltaX2(b *testing.B) {
 	}
 
 	last := uint16(0)
+	r := 0
 	for i := 0; i < b.N; i++ {
 		kindOfRandom := last + 7*uint16(i)
-		_ = toyfloat12x2.GetIntegerDelta(last, kindOfRandom)
+		r = toyfloat12x2.GetIntegerDelta(last, kindOfRandom)
 		last = kindOfRandom
 	}
+
+	intResult = r
 }
 
 func BenchmarkUseDelta(b *testing.B) {
@@ -468,6 +489,7 @@ func BenchmarkUseDelta(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		last = toyfloat12.UseIntegerDelta(last, i%255-128)
 	}
+	intResult = int(last)
 }
 
 func BenchmarkUseDeltaX2(b *testing.B) {
@@ -480,6 +502,7 @@ func BenchmarkUseDeltaX2(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		last = toyfloat12x2.UseIntegerDelta(last, i%255-128)
 	}
+	intResult = int(last)
 }
 
 // ------------------------
