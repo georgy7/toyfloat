@@ -1555,6 +1555,26 @@ func TestUseDelta15X3(t *testing.T) {
 		t.Logf("delta=-26384 encoded: 0b%b", resultTf)
 		t.Fatalf("%f != %f", result, expected)
 	}
+
+	lastTf = toyfloat15x3.Encode(-3.14)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, math.MinInt64)
+	result = toyfloat15x3.Decode(resultTf)
+	expected = -((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
+
+	if math.Abs(result-expected) > epsMax {
+		t.Logf("delta=MinInt64 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	lastTf = toyfloat15x3.Encode(3.14)
+	resultTf = toyfloat15x3.UseIntegerDelta(lastTf, math.MaxInt64)
+	result = toyfloat15x3.Decode(resultTf)
+	expected = ((1.0+(twoPowerM-1)/twoPowerM)*2 - a) * b
+
+	if math.Abs(result-expected) > epsMax {
+		t.Logf("delta=MaxInt64 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
 }
 
 func TestGetDelta15X3(t *testing.T) {
@@ -1798,6 +1818,25 @@ func TestUseDeltaUnsigned(t *testing.T) {
 
 	if math.Abs(result-expected) > epsMin {
 		t.Logf("delta=-26384 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, math.MinInt64)
+	result = toyfloat12u.Decode(resultTf)
+	expected = 0.0
+
+	if math.Abs(result-expected) > epsMax {
+		t.Logf("delta=MinInt64 encoded: 0b%b", resultTf)
+		t.Fatalf("%f != %f", result, expected)
+	}
+
+	lastTf = toyfloat12u.Encode(1.23)
+	resultTf = toyfloat12u.UseIntegerDelta(lastTf, math.MaxInt64)
+	result = toyfloat12u.Decode(resultTf)
+	expected = ((1.0+(twoPowerM-1)/twoPowerM)*128 - a) * b
+
+	if math.Abs(result-expected) > epsMax {
+		t.Logf("delta=MaxInt64 encoded: 0b%b", resultTf)
 		t.Fatalf("%f != %f", result, expected)
 	}
 }

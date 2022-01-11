@@ -46,17 +46,13 @@ func (t *Type) GetIntegerDelta(last uint16, x uint16) int {
 	return encodeDelta(last, x, t)
 }
 
-// UseIntegerDelta returns a value, shifted to the specified number of steps.
-// It crops the value to minimum and maximum of the type.
-// This API allows you to use large deltas, however it does not
-// protect you from integer overflow.
 func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
 	return decodeDelta(last, delta, t)
 }
 
 // Abs returns encoded absolute value of encoded argument.
 func (t *Type) Abs(x uint16) uint16 {
-	return abs(x, t.minus)
+	return x & (^t.minus)
 }
 
 // MinValue returns zero for unsigned types and negative
@@ -258,14 +254,14 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 	filter := s.minus | (s.xMask << s.mSize) | s.mMask
 	filteredSimpleLast := int(toSimple(last, s.minus) & filter)
 
-	r := filteredSimpleLast + delta
-	if r < 0 {
-		r = 0
-	} else if r > int(filter) {
-		r = int(filter)
+	r := uint16(0)
+	if delta > int(filter)-filteredSimpleLast {
+		r = filter
+	} else if delta >= -filteredSimpleLast {
+		r = uint16(filteredSimpleLast + delta)
 	}
 
-	return fromSimple(uint16(r), s.minus)
+	return fromSimple(r, s.minus)
 }
 
 func toSimple(tf, minus uint16) uint16 {
@@ -284,10 +280,6 @@ func fromSimple(simple, minus uint16) uint16 {
 
 func isNegative(tf, minus uint16) bool {
 	return 0b0 != tf&minus
-}
-
-func abs(tf, minus uint16) uint16 {
-	return tf & (^minus)
 }
 
 func powerOfTwo(x uint8) float64 {
