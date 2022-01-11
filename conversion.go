@@ -182,17 +182,17 @@ func decode(tf uint16, s *Type) float64 {
 
 	significand := decodeSignificand(float64(tf&s.mMask), s.dsFactor)
 
-	r := ((significand * scale) - a) * c
+	absValue := ((significand * scale) - a) * c
 
 	// The problem only appeared with base three exponent.
-	if ((1.0 - 1e-14) < r) && (r < (1.0 + 1e-14)) {
-		r = 1.0
+	if ((1.0 - 1e-14) < absValue) && (absValue < (1.0 + 1e-14)) {
+		absValue = 1.0
 	}
 
 	if isNegative(tf, s.minus) {
-		return -r
+		return -absValue
 	}
-	return r
+	return absValue
 }
 
 func encodeInnerValue(inner float64, s *Type) uint16 {
@@ -202,6 +202,33 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	// math.Round(x) = math.Floor(x + 0.5), x >= 0
 	const rounding = 0.499999999999
 
+	// I need to find m from (1+(b-1)(m/2^M))(b^x), which is named "inner" here.
+	// "inverseScale" = 1/(b^x)
+	// "denominator" = 1/((b-1)(1/(2^M))). It is reversed dsFactor.
+	// It's called denominator because it's equals 2^M for base 2 exponents.
+	// It's integer power of two for both base 2 and base 3 exponents.
+	// So,
+	// inner = (1+(b-1)(m/2^M)) * (b^x)
+	// inner = (1+(b-1)(m/2^M)) * (1/inverseScale)
+	// inner * inverseScale = 1 + (b-1)(m/2^M)
+	// (inner * inverseScale) - 1 = (b-1)(m/2^M)
+	// (inner * inverseScale) - 1 = (b-1)(1/2^M)m
+	// (inner * inverseScale) - 1 = (1/denominator)m
+	// ((inner * inverseScale) - 1) * denominator = m
+	// m = ((inner * inverseScale) - 1) * denominator
+	// m = ((inner * inverseScale * denominator) - denominator)
+	// m = inner * inverseScale * denominator - denominator
+	//
+	// inner >= 0 always for this method,
+	// denominator is integer number,
+	// inverseScale is positive rational number.
+	// Thus, m can not be negative.
+	//
+	// Method getBinaryExponent guarantees, that m < (2^M)-0.5,
+	// so, in theory, m may be safely rounded to the closest integer,
+	// but, this is floating-point arithmetic,
+	// and I am afraid, it somehow may be greater than or equal to (2^M)-0.5.
+	// So I use the constant slightly less than one-half for rounding.
 	significand := denominator*inner*inverseScale - denominator + rounding
 
 	return uint16(significand) | binaryExponent
@@ -229,22 +256,39 @@ func makeDecodeSignificandFactor(mSize uint8, base3 bool) float64 {
 func makeExponentBoundary(twoPowerMSize, base float64) float64 {
 	// This is the part (1 + (b - 1) * m/(2^M)) of the formula,
 	// that should be rounded to a greater exponent.
+	// Maximum integer m equals 2^M - 1.
+	// So, a floating-point m before rounding must be less than 2^M - 0.5.
 	mDiv2m := (twoPowerMSize - 0.5) / twoPowerMSize
 	return 1 + (base-1)*mDiv2m
 }
 
-func getBinaryExponent(inner float64, s *Type) (uint16, float64) {
-	absValue := math.Abs(inner)
+func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
 	factor := s.boundary
 
-	result := s.xMask & maxPossibleScaleIndex
+	// It's biased in the sense
+	// that zero means the minimum exponent of the type.
+	biasedExponent := s.xMask & maxPossibleScaleIndex
 
-	for (result > 0) && (factor*s.scale[result-1] > absValue) {
-		result--
+	// This method must find such minimum x, that m < (2^M)-0.5.
+	// So, this loop finds the maximum x for the following condition:
+	// absValue >= (1 + (b-1) * ((2^M)-0.5)/(2^M)) * b^(x-1)
+	// Thus, m >= (2^M)-0.5 will lead to a larger x.
+	// The method will return the corresponding scale,
+	// and this will lead to a lower m (non-negative anyway).
+	//
+	// The case, with m >= (2^M)-0.5 for the maximum possible x,
+	// is filtered in the beginning of method "encode".
+	// If those checks fail to filter out values that are out of range,
+	// it will result in an integer overflow.
+	for (biasedExponent > 0) && (factor*s.scale[biasedExponent-1] > absValue) {
+		biasedExponent--
 	}
 
-	scale := s.scale[result]
-	return result << s.mSize, 1.0 / scale
+	// This is an exponential part of encoded number: b^x.
+	scale := s.scale[biasedExponent]
+	// By some reason, multiplying to non-constant inverse number
+	// is faster, than division on my computer. So I return inverse scale.
+	return biasedExponent << s.mSize, 1.0 / scale
 }
 
 func encodeDelta(last, x uint16, s *Type) int {

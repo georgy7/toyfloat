@@ -2185,4 +2185,96 @@ func TestExtremeCases(t *testing.T) {
 			t.Fatalf("%f != %f (4x2)\n", result, input)
 		}
 	}
+
+	{
+		toyfloat12 := makeTypeX4(12, true, t)
+		const eps = 0.000031
+
+		for input := 0.00005; input >= 1e-12; input -= 1e-9 {
+			result := toyfloat12.Decode(toyfloat12.Encode(input))
+			if math.Abs(result-input) > eps {
+				t.Fatalf("%.18f != %.18f\n", result, input)
+			}
+		}
+	}
+
+	{
+		toyfloat12 := makeTypeX4(12, true, t)
+		const eps = 1.00393
+		const max = 255.99607843137255
+
+		for input := max - 3; input < max+3; input += 1e-7 {
+			result := toyfloat12.Decode(toyfloat12.Encode(input))
+			expected := math.Min(input, max)
+			if math.Abs(result-expected) > eps {
+				t.Fatalf("%.18f != %.18f\n", result, expected)
+			}
+		}
+	}
+
+	{
+		toyfloat15x3 := makeTypeX3(15, true, t)
+		const eps = 0.000977
+		const max = 4.046627
+
+		for input := max - 0.5; input < max+0.5; input += 1e-7 {
+			result := toyfloat15x3.Decode(toyfloat15x3.Encode(input))
+			expected := math.Min(input, max)
+			if math.Abs(result-expected) > eps {
+				t.Fatalf("%.18f != %.18f\n", result, expected)
+			}
+		}
+	}
+
+	{
+		toyfloat4x2 := makeTypeX2(4, true, t)
+		const max = 2.0384615384615383
+
+		// a = 3^-3 = 1/27
+		// c = 1 / (1 - a) = 1.0384615384615383
+		// baseEps = (3 - 1) * (1 / 2^1) = 2 * 1/2 = 1
+		// eps4 = (baseEps * (3^0)) * c = c
+		const eps = 1.0384615384615383
+
+		for input := 0.9; input < max+1; input += 1e-4 {
+			result := toyfloat4x2.Decode(toyfloat4x2.Encode(input))
+			expected := math.Min(input, max)
+			if math.Abs(result-expected) > eps {
+				t.Fatalf("%.18f != %.18f\n", result, expected)
+			}
+		}
+	}
+
+	{
+		toyfloat4x2 := makeTypeX2(4, true, t)
+		const min = -2.0384615384615383
+		const eps = 1.0384615384615383
+
+		for input := -0.9; input > min-1; input -= 1e-4 {
+			result := toyfloat4x2.Decode(toyfloat4x2.Encode(input))
+			expected := math.Max(input, min)
+			if math.Abs(result-expected) > eps {
+				t.Fatalf("%.18f != %.18f\n", result, expected)
+			}
+		}
+	}
+
+	{
+		toyfloat9x2u := makeTypeX2(9, false, t)
+		const max = 3.060697115384615
+
+		// a = 3^-3 = 1/27
+		// c = 1 / (1 - a) = 1.0384615384615383
+		// baseEps = (3 - 1) * (1 / 2^7) = 2/128 = 1/64
+		// eps4 = (baseEps * (3^0)) * c = c/64
+		const eps = 0.016225961538461536
+
+		for input := 0.9; input < max+1; input += 1e-7 {
+			result := toyfloat9x2u.Decode(toyfloat9x2u.Encode(input))
+			expected := math.Min(input, max)
+			if math.Abs(result-expected) > eps {
+				t.Fatalf("%.18f != %.18f\n", result, expected)
+			}
+		}
+	}
 }
