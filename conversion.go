@@ -203,6 +203,7 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	const rounding = 0.499999999999
 
 	// I need to find m from (1+(b-1)(m/2^M))(b^x), which is named "inner" here.
+	//
 	// "inverseScale" = 1/(b^x)
 	// "denominator" = 1/((b-1)(1/(2^M))). It is reversed dsFactor.
 	// It's called denominator because it's equals 2^M for base 2 exponents.
@@ -286,8 +287,8 @@ func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
 
 	// This is an exponential part of encoded number: b^x.
 	scale := s.scale[biasedExponent]
-	// By some reason, multiplying to non-constant inverse number
-	// is faster, than division on my computer. So I return inverse scale.
+	// By some reason, multiplying by a non-constant inverse number
+	// is faster, than division on my computer. So I return the inverse scale.
 	return biasedExponent << s.mSize, 1.0 / scale
 }
 
