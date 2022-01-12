@@ -207,7 +207,7 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	// "inverseScale" = 1/(b^x)
 	// "denominator" = 1/((b-1)(1/(2^M))). It is reversed dsFactor.
 	// It's called denominator because it's equals 2^M for base 2 exponents.
-	// It's integer power of two for both base 2 and base 3 exponents.
+	// It's a natural power of two for both base 2 and base 3 exponents.
 	// So,
 	// inner = (1+(b-1)(m/2^M)) * (b^x)
 	// inner = (1+(b-1)(m/2^M)) * (1/inverseScale)
@@ -221,8 +221,8 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	// m = inner * inverseScale * denominator - denominator
 	//
 	// inner >= 0 always for this method,
-	// denominator is integer number,
-	// inverseScale is positive rational number.
+	// denominator is a natural number,
+	// inverseScale is a positive rational number.
 	// Thus, m can not be negative.
 	//
 	// Method getBinaryExponent ensures that m < (2^M)-0.5,
