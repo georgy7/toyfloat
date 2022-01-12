@@ -224,10 +224,10 @@ func encodeInnerValue(inner float64, s *Type) uint16 {
 	// inverseScale is positive rational number.
 	// Thus, m can not be negative.
 	//
-	// Method getBinaryExponent guarantees, that m < (2^M)-0.5,
-	// so, in theory, m may be safely rounded to the closest integer,
-	// but, this is floating-point arithmetic,
-	// and I am afraid, it somehow may be greater than or equal to (2^M)-0.5.
+	// Method getBinaryExponent ensures that m < (2^M)-0.5,
+	// so, in theory, m can be safely rounded to the closest integer,
+	// however since this is floating-point arithmetic,
+	// I am afraid, it might somehow be >= (2^M)-0.5.
 	// So I use the constant slightly less than one-half for rounding.
 	significand := denominator*inner*inverseScale - denominator + rounding
 
@@ -272,14 +272,14 @@ func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
 	// This method must find such minimum x, that m < (2^M)-0.5.
 	// So, this loop finds the maximum x for the following condition:
 	// absValue >= (1 + (b-1) * ((2^M)-0.5)/(2^M)) * b^(x-1)
-	// Thus, m >= (2^M)-0.5 will lead to a larger x.
-	// The method will return the corresponding scale,
-	// and this will lead to a lower m (non-negative anyway).
+	// Thus, m values >= (2^M)-0.5 will lead to selection of a larger x.
+	// Then, the method will return the corresponding scale,
+	// and this will result in a lower m (non-negative anyway).
 	//
 	// The case, with m >= (2^M)-0.5 for the maximum possible x,
 	// is filtered in the beginning of method "encode".
 	// If those checks fail to filter out values that are out of range,
-	// it will result in an integer overflow.
+	// it will lead to an integer overflow.
 	for (biasedExponent > 0) && (factor*s.scale[biasedExponent-1] > absValue) {
 		biasedExponent--
 	}
