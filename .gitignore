@@ -9,3 +9,4 @@ images/*.dvi
 images/*.aux
 images/*.log
 images/*.tsv
+images/*.xcf
