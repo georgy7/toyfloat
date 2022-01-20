@@ -23,22 +23,30 @@ type Type struct {
 	scale               [scaleArraySize]float64
 }
 
+// NewTypeX2 makes a type with 2-bit exponent with default settings.
 func NewTypeX2(length int, signed bool) (Type, error) {
 	return newSettings(uint8(length), 2, -3, true, signed)
 }
 
+// NewTypeX3 makes a type with 3-bit exponent with default settings.
 func NewTypeX3(length int, signed bool) (Type, error) {
 	return newSettings(uint8(length), 3, -6, false, signed)
 }
 
+// NewTypeX4 makes a type with 4-bit exponent with default settings.
 func NewTypeX4(length int, signed bool) (Type, error) {
 	return newSettings(uint8(length), 4, -8, false, signed)
 }
 
+// Encode converts a number to its binary representation for this type.
+// You cannot compare such values directly because they are "sign–magnitude".
+// Of course, they have zeros in extra most-significant bits.
 func (t *Type) Encode(v float64) uint16 {
 	return encode(v, t)
 }
 
+// Decode is just method Encode in reverse.
+// It ignores values of extra most-significant bits.
 func (t *Type) Decode(x uint16) float64 {
 	return decode(x, t)
 }
@@ -311,15 +319,24 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 	return fromComparable(r, s.minus)
 }
 
+// toComparable returns a representation close to "ones' complement",
+// except for its sign bit reversed.
 func toComparable(tf, minus uint16) uint16 {
 	if 0 == tf&minus {
+		// It's true for both positive signed and unsigned numbers.
 		return minus | tf
 	}
+	// Negative, including -0.
 	return ^tf
 }
 
 func fromComparable(simple, minus uint16) uint16 {
+	// Sign bit are inverted here, so it is
+	// not equal to its bitmask for negative number.
+	// Also, variable minus is zero for unsigned values.
+	// So, it's just "0 != 0", always false.
 	if minus != simple&minus {
+		// Negative, including -0.
 		return ^simple
 	}
 	return (^minus) & simple
