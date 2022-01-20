@@ -60,8 +60,40 @@ func (t *Type) UseIntegerDelta(last uint16, delta int) uint16 {
 }
 
 // Abs returns encoded absolute value of encoded argument.
+// This does not work for the comparable form.
 func (t *Type) Abs(x uint16) uint16 {
 	return x & (^t.minus)
+}
+
+// ToComparable returns a representation close to "ones' complement",
+// except for its sign bit reversed.
+// Thus, all zeros mean the lowest value, and all ones mean the maximum.
+// Programming languages such as C, C++, Go define unsigned integer overflow,
+// which allows this form to be used for delta encoding without branching.
+func (t *Type) ToComparable(tf uint16) uint16 {
+	var r uint16
+	if 0 == tf&t.minus {
+		// It's true for both positive signed and unsigned numbers.
+		r = t.minus | tf
+	} else {
+		// Negative, including -0.
+		r = ^tf
+	}
+	return r & t.bitmask
+}
+
+// FromComparable is ToComparable in reverse.
+// Note, that it does not filter extra bits (for performance reasons).
+func (t *Type) FromComparable(c uint16) uint16 {
+	// Sign bit are inverted here, so it is
+	// not equal to its bitmask for a negative number.
+	// Also, variable "minus" equals zero for unsigned values,
+	// "0 != 0" is always false.
+	if t.minus != c&t.minus {
+		// Negative, including -0.
+		return ^c
+	}
+	return (^t.minus) & c
 }
 
 // MinValue returns zero for unsigned types and negative
@@ -301,13 +333,13 @@ func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
 }
 
 func encodeDelta(last, x uint16, s *Type) int {
-	a := int(toComparable(last, s.minus) & s.bitmask)
-	b := int(toComparable(x, s.minus) & s.bitmask)
+	a := int(s.ToComparable(last))
+	b := int(s.ToComparable(x))
 	return b - a
 }
 
 func decodeDelta(last uint16, delta int, s *Type) uint16 {
-	lastComparable := int(toComparable(last, s.minus) & s.bitmask)
+	lastComparable := int(s.ToComparable(last))
 
 	r := uint16(0)
 	if delta > int(s.bitmask)-lastComparable {
@@ -316,30 +348,7 @@ func decodeDelta(last uint16, delta int, s *Type) uint16 {
 		r = uint16(lastComparable + delta)
 	}
 
-	return fromComparable(r, s.minus)
-}
-
-// toComparable returns a representation close to "ones' complement",
-// except for its sign bit reversed.
-func toComparable(tf, minus uint16) uint16 {
-	if 0 == tf&minus {
-		// It's true for both positive signed and unsigned numbers.
-		return minus | tf
-	}
-	// Negative, including -0.
-	return ^tf
-}
-
-func fromComparable(simple, minus uint16) uint16 {
-	// Sign bit are inverted here, so it is
-	// not equal to its bitmask for negative number.
-	// Also, variable minus is zero for unsigned values.
-	// So, it's just "0 != 0", always false.
-	if minus != simple&minus {
-		// Negative, including -0.
-		return ^simple
-	}
-	return (^minus) & simple
+	return s.FromComparable(r)
 }
 
 func isNegative(tf, minus uint16) bool {
