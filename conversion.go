@@ -47,6 +47,13 @@ func NewType(length, xBase, xSize uint8, minX int, signed bool) (Type, error) {
 		return Type{},
 			errors.New("only base 2 and base 3 exponents are supported rn")
 	}
+
+	if minX >= 0 {
+		return Type{}, errors.New("c=1/(1-xBase^minX)" +
+			" where it is assumed that minX is not positive" +
+			" so that с makes sense")
+	}
+
 	return newSettings(length, xSize, minX, 3 == xBase, signed)
 }
 
