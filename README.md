@@ -18,6 +18,12 @@ It has:
 
 ![Formula](images/formula.png)
 
+Base 3 in 2-bit exponent provides a higher density
+of values close to zero and a wider range,
+at the cost of reduced precision of values greater than one-third.
+
+You can also choose other settings.
+
 ```
 Examples:
 
@@ -29,12 +35,6 @@ _sxx xmmm mmmm mmmm - 15-bit with 3-bit exponent
 ```
 
 ![Precision graph](images/comparison.png)
-
-Base 3 in 2-bit exponent provides a higher density
-of values close to zero and a wider range,
-at the cost of reduced precision of values greater than one-third.
-
-![Base 2 and base 3 exponent comparison](images/precision15x2_b2b3.png)
 
 ## Usage
 
@@ -169,16 +169,16 @@ Delta encoding (12-bit)
 ## Performance
 
 ```
-BenchmarkFloat64IncrementAsAReference-8     1000000000           1.06 ns/op
-BenchmarkCreateTypeX4-8                     25212883            46.9 ns/op
-BenchmarkCreateTypeX3-8                     32310368            36.7 ns/op
-BenchmarkCreateTypeX2-8                     34595611            31.9 ns/op
-BenchmarkEncode-8                           100000000           11.2 ns/op
-BenchmarkDecode-8                           290401214            4.13 ns/op
-BenchmarkEncode12X2-8                       100000000           10.6 ns/op
-BenchmarkDecode12X2-8                       293908017            4.16 ns/op
-BenchmarkGetDelta-8                         669823910            1.81 ns/op
-BenchmarkGetDeltaX2-8                       562616509            2.11 ns/op
-BenchmarkUseDelta-8                         319181376            3.76 ns/op
-BenchmarkUseDeltaX2-8                       394661666            3.03 ns/op
+BenchmarkFloat64IncrementAsAReference-8     1000000000           1.07 ns/op
+BenchmarkCreateTypeX4-8                     18495426            63.3 ns/op
+BenchmarkCreateTypeX3-8                     22131417            56.5 ns/op
+BenchmarkCreateTypeX2-8                     23672715            49.5 ns/op
+BenchmarkEncode-8                           88997920            11.4 ns/op
+BenchmarkDecode-8                           281305831            4.23 ns/op
+BenchmarkEncode12X2-8                       100000000           10.7 ns/op
+BenchmarkDecode12X2-8                       258040833            4.26 ns/op
+BenchmarkGetDelta-8                         557484399            2.14 ns/op
+BenchmarkGetDeltaX2-8                       661576219            1.82 ns/op
+BenchmarkUseDelta-8                         246797817            4.82 ns/op
+BenchmarkUseDeltaX2-8                       201492883            5.27 ns/op
 ```

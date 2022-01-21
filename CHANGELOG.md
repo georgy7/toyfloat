@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2022-01-21
+### Added
+- `NewType` gives access to all types this library can handle.
+- `ToComparable` and `FromComparable`
+  - You can compare such values without decoding.
+  - You can find the difference relying on unsigned integer overflow.
+
 ## [1.10.0] - 2022-01-12
 ### Added
 - Integer overflow protection in `UseIntegerDelta`.

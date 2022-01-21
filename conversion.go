@@ -13,29 +13,41 @@ const scaleArraySize = maxPossibleScaleIndex + 1
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
 	mSize               uint8
-	minus, mMask        uint16
-	encodingDenominator float64
+	minus, mMask, xMask uint16
 	minValue, maxValue  float64
+	encodingDenominator float64
 	dsFactor, boundary  float64
-	xMask               uint16
-	bitmask             uint16
-	base3               bool
 	scale               [scaleArraySize]float64
+	bitmask             uint16
 }
 
 // NewTypeX2 makes a type with 2-bit exponent with default settings.
 func NewTypeX2(length int, signed bool) (Type, error) {
-	return newSettings(uint8(length), 2, -3, true, signed)
+	return NewType(uint8(length), 3, 2, -3, signed)
 }
 
 // NewTypeX3 makes a type with 3-bit exponent with default settings.
 func NewTypeX3(length int, signed bool) (Type, error) {
-	return newSettings(uint8(length), 3, -6, false, signed)
+	return NewType(uint8(length), 2, 3, -6, signed)
 }
 
 // NewTypeX4 makes a type with 4-bit exponent with default settings.
 func NewTypeX4(length int, signed bool) (Type, error) {
-	return newSettings(uint8(length), 4, -8, false, signed)
+	return NewType(uint8(length), 2, 4, -8, signed)
+}
+
+// NewType allows creating custom types.
+// Use it at your own risk.
+// The argument minX is the minimum power of the exponential part of a number.
+// The argument xSize is the bits count encode the power.
+// So the maximum power equals minX+(2^xSize)-1,
+// and the maximum exponential part equals xBase^(minX+(2^xSize)-1).
+func NewType(length, xBase, xSize uint8, minX int, signed bool) (Type, error) {
+	if (xBase != 2) && (xBase != 3) {
+		return Type{},
+			errors.New("only base 2 and base 3 exponents are supported rn")
+	}
+	return newSettings(length, xSize, minX, 3 == xBase, signed)
 }
 
 // Encode converts a number to its binary representation for this type.
@@ -83,7 +95,7 @@ func (t *Type) ToComparable(tf uint16) uint16 {
 }
 
 // FromComparable is ToComparable in reverse.
-// Note, that it does not filter extra bits (for performance reasons).
+// Note, that it does not reset extra bits (for performance reasons).
 func (t *Type) FromComparable(c uint16) uint16 {
 	// Sign bit are inverted here, so it is
 	// not equal to its bitmask for a negative number.
@@ -136,7 +148,6 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 		mMask:    (uint16(1) << mSize) - 1,
 		dsFactor: makeDecodeSignificandFactor(mSize, b3),
 		xMask:    (uint16(1) << xSize) - 1,
-		base3:    b3,
 	}
 
 	if signed {
@@ -284,7 +295,6 @@ func makeDecodeSignificandFactor(mSize uint8, base3 bool) float64 {
 		// (b-1) * 1/(2^M)
 		// (3-1) * 1/(2^M)
 		// (2^1) * 1/(2^M)
-		// (2^1) / (2^M)
 		// (2^1) * (2^-M)
 		// 2^(1-M)
 		// 1 / 2^(-(1-M))
