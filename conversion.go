@@ -15,8 +15,8 @@ type Type struct {
 	mSize               uint8
 	minus, mMask, xMask uint16
 	minValue, maxValue  float64
-	encodingDenominator float64
-	dsFactor, boundary  float64
+	esFactor, dsFactor  float64
+	xBoundary           float64
 	scale               [scaleArraySize]float64
 	bitmask             uint16
 }
@@ -39,7 +39,7 @@ func NewTypeX4(length int, signed bool) (Type, error) {
 // NewType allows creating custom types.
 // Use it at your own risk.
 // The argument minX is the minimum power of the exponential part of a number.
-// The argument xSize is the bits count encode the power.
+// The argument xSize is the number of bits that encode the power.
 // So the maximum power equals minX+(2^xSize)-1,
 // and the maximum exponential part equals xBase^(minX+(2^xSize)-1).
 func NewType(length, xBase, xSize uint8, minX int, signed bool) (Type, error) {
@@ -54,7 +54,7 @@ func NewType(length, xBase, xSize uint8, minX int, signed bool) (Type, error) {
 			" so that с makes sense")
 	}
 
-	return newSettings(length, xSize, minX, 3 == xBase, signed)
+	return newSettings(length, xBase, xSize, minX, signed)
 }
 
 // Encode converts a number to its binary representation for this type.
@@ -129,7 +129,7 @@ func (t *Type) MaxValue() float64 {
 // ----------------
 // Implementation:
 
-func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
+func newSettings(length, xBase, xSize uint8, minX int, signed bool) (Type, error) {
 	if length > 16 {
 		return Type{}, errors.New("maximum length is 16 bits")
 	}
@@ -150,11 +150,10 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 	}
 
 	settings := Type{
-		mSize:    mSize,
-		minus:    uint16(0),
-		mMask:    (uint16(1) << mSize) - 1,
-		dsFactor: makeDecodeSignificandFactor(mSize, b3),
-		xMask:    (uint16(1) << xSize) - 1,
+		mSize: mSize,
+		minus: uint16(0),
+		mMask: (uint16(1) << mSize) - 1,
+		xMask: (uint16(1) << xSize) - 1,
 	}
 
 	if signed {
@@ -166,30 +165,29 @@ func newSettings(length, xSize uint8, minX int, b3, signed bool) (Type, error) {
 
 	maxX := minX + (int(1) << xSize) - 1
 
-	base := 2.0
-	settings.encodingDenominator = powerOfTwo(mSize)
-	if b3 {
-		base = 3.0
-		settings.encodingDenominator = powerOfTwo(mSize - 1)
-	}
+	// multiplier to encode the significand
+	settings.esFactor = powerOfTwo(mSize) / float64(xBase-1)
+	// multiplier to decode it
+	settings.dsFactor = 1.0 / settings.esFactor
 
-	settings.boundary = makeExponentBoundary(powerOfTwo(mSize), base)
+	f64Base := float64(xBase)
+	settings.xBoundary = makeExponentBoundary(powerOfTwo(mSize), f64Base)
 
-	if b3 {
-		denominator := 3.0
-		for x := -1; x >= minX; x-- {
-			settings.scale[x-minX] = 1.0 / denominator
-			denominator *= 3.0
-		}
-		for x := 0; x <= maxX; x++ {
-			settings.scale[x-minX] = math.Pow(base, float64(x))
-		}
-	} else {
+	if 2 == xBase {
 		for x := minX; x < 0; x++ {
 			settings.scale[x-minX] = 1.0 / powerOfTwo(uint8(-x))
 		}
 		for x := 0; x <= maxX; x++ {
 			settings.scale[x-minX] = powerOfTwo(uint8(x))
+		}
+	} else {
+		denominator := f64Base
+		for x := -1; x >= minX; x-- {
+			settings.scale[x-minX] = 1.0 / denominator
+			denominator *= f64Base
+		}
+		for x := 0; x <= maxX; x++ {
+			settings.scale[x-minX] = math.Pow(f64Base, float64(x))
 		}
 	}
 
@@ -255,7 +253,7 @@ func decode(tf uint16, s *Type) float64 {
 
 func encodeInnerValue(inner float64, s *Type) uint16 {
 	binaryExponent, inverseScale := getBinaryExponent(inner, s)
-	denominator := s.encodingDenominator
+	denominator := s.esFactor
 
 	// math.Round(x) = math.Floor(x + 0.5), x >= 0
 	const rounding = 0.499999999999
@@ -297,20 +295,6 @@ func decodeSignificand(m, dsFactor float64) float64 {
 	return 1.0 + m*dsFactor
 }
 
-func makeDecodeSignificandFactor(mSize uint8, base3 bool) float64 {
-	if base3 {
-		// (b-1) * 1/(2^M)
-		// (3-1) * 1/(2^M)
-		// (2^1) * 1/(2^M)
-		// (2^1) * (2^-M)
-		// 2^(1-M)
-		// 1 / 2^(-(1-M))
-		// 1 / 2^(M-1))
-		return 1.0 / powerOfTwo(mSize-1)
-	}
-	return 1.0 / powerOfTwo(mSize)
-}
-
 func makeExponentBoundary(twoPowerMSize, base float64) float64 {
 	// This is the part (1 + (b - 1) * m/(2^M)) of the formula,
 	// that should be rounded to a greater exponent.
@@ -321,7 +305,7 @@ func makeExponentBoundary(twoPowerMSize, base float64) float64 {
 }
 
 func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
-	factor := s.boundary
+	factor := s.xBoundary
 
 	// It's biased in the sense
 	// that zero means the minimum exponent of the type.
