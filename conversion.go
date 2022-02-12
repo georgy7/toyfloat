@@ -7,9 +7,6 @@ import (
 	"math"
 )
 
-const maxPossibleScaleIndex = 0xF
-const scaleArraySize = maxPossibleScaleIndex + 1
-
 // Type is a reusable immutable set of encoder settings.
 type Type struct {
 	mSize               uint8
@@ -17,7 +14,7 @@ type Type struct {
 	minValue, maxValue  float64
 	esFactor, dsFactor  float64
 	xBoundary           float64
-	scale               [scaleArraySize]float64
+	scale               []float64
 	bitmask             uint16
 }
 
@@ -145,7 +142,7 @@ func newSettings(length, xBase, xSize uint8, minX int, signed bool) (Type, error
 
 	mSize := length - (xSize + signSize)
 
-	if (xSize >= 16) || ((int(1) << xSize) > scaleArraySize) || (mSize >= 16) {
+	if (xSize >= 16) || (mSize >= 16) {
 		return Type{}, errors.New("library Toyfloat is broken")
 	}
 
@@ -163,8 +160,6 @@ func newSettings(length, xBase, xSize uint8, minX int, signed bool) (Type, error
 	settings.bitmask =
 		settings.minus | (settings.xMask << settings.mSize) | settings.mMask
 
-	maxX := minX + (int(1) << xSize) - 1
-
 	// multiplier to encode the significand
 	settings.esFactor = powerOfTwo(mSize) / float64(xBase-1)
 	// multiplier to decode it
@@ -173,14 +168,10 @@ func newSettings(length, xBase, xSize uint8, minX int, signed bool) (Type, error
 	f64Base := float64(xBase)
 	settings.xBoundary = makeExponentBoundary(powerOfTwo(mSize), f64Base)
 
-	if 2 == xBase {
-		for x := minX; x < 0; x++ {
-			settings.scale[x-minX] = 1.0 / powerOfTwo(uint8(-x))
-		}
-		for x := 0; x <= maxX; x++ {
-			settings.scale[x-minX] = powerOfTwo(uint8(x))
-		}
-	} else {
+	settings.scale = make([]float64, int(1)<<xSize)
+	maxX := minX + len(settings.scale) - 1
+
+	{
 		denominator := f64Base
 		for x := -1; x >= minX; x-- {
 			settings.scale[x-minX] = 1.0 / denominator
@@ -192,7 +183,7 @@ func newSettings(length, xBase, xSize uint8, minX int, signed bool) (Type, error
 	}
 
 	mMax := powerOfTwo(mSize) - 1.0
-	maxScale := settings.scale[settings.xMask&maxPossibleScaleIndex]
+	maxScale := get(settings.scale, settings.xMask)
 	internalMaximum := decodeSignificand(mMax, settings.dsFactor) * maxScale
 
 	a := settings.scale[0]
@@ -234,7 +225,7 @@ func decode(tf uint16, s *Type) float64 {
 	a := s.scale[0]
 	c := 1.0 / (1.0 - a)
 
-	scale := s.scale[(tf>>s.mSize)&(s.xMask&maxPossibleScaleIndex)]
+	scale := get(s.scale, (tf>>s.mSize)&(s.xMask))
 
 	significand := decodeSignificand(float64(tf&s.mMask), s.dsFactor)
 
@@ -305,11 +296,11 @@ func makeExponentBoundary(twoPowerMSize, base float64) float64 {
 }
 
 func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
-	factor := s.xBoundary
+	xb := s.xBoundary
 
 	// It's biased in the sense
 	// that zero means the minimum exponent of the type.
-	biasedExponent := s.xMask & maxPossibleScaleIndex
+	biasedExponent := s.xMask
 
 	// This method must find such minimum x, that m < (2^M)-0.5.
 	// So, this loop finds the maximum x for the following condition:
@@ -322,12 +313,12 @@ func getBinaryExponent(absValue float64, s *Type) (uint16, float64) {
 	// is filtered in the beginning of method "encode".
 	// If those checks fail to filter out values that are out of range,
 	// it will lead to an integer overflow.
-	for (biasedExponent > 0) && (factor*s.scale[biasedExponent-1] > absValue) {
+	for (biasedExponent > 0) && (xb*get(s.scale, biasedExponent-1) > absValue) {
 		biasedExponent--
 	}
 
 	// This is an exponential part of encoded number: b^x.
-	scale := s.scale[biasedExponent]
+	scale := get(s.scale, biasedExponent)
 	// By some reason, multiplying by a non-constant inverse number
 	// is faster, than division on my computer. So I return the inverse scale.
 	return biasedExponent << s.mSize, 1.0 / scale
@@ -358,4 +349,16 @@ func isNegative(tf, minus uint16) bool {
 
 func powerOfTwo(x uint8) float64 {
 	return float64(int(1) << x)
+}
+
+func get(s []float64, i uint16) float64 {
+	maxIndex := len(s) - 1
+	if maxIndex < 0 {
+		return 0.0
+	}
+
+	if int(i) > maxIndex {
+		return s[maxIndex]
+	}
+	return s[i]
 }

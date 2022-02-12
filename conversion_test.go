@@ -2277,4 +2277,72 @@ func TestExtremeCases(t *testing.T) {
 			}
 		}
 	}
+
+	{
+		tf, err := NewType(16, 3, 7, -1, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const maxRelError = 0.02
+
+		for x := 0; x <= 126; x++ {
+			input := 0.1 * math.Pow(3.0, float64(x))
+			result := tf.Decode(tf.Encode(input))
+			if math.Abs((result-input)/input) > maxRelError {
+				t.Fatalf("%.18f != %.18f (x = %d)\n", result, input, x)
+			}
+		}
+	}
+
+	{
+		tf, err := NewType(16, 2, 7, -1, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const maxRelError = 0.02
+
+		for x := 0; x <= 126; x++ {
+			input := 0.1 * math.Pow(2.0, float64(x))
+			result := tf.Decode(tf.Encode(input))
+			if math.Abs((result-input)/input) > maxRelError {
+				t.Fatalf("%.18f != %.18f (x = %d)\n", result, input, x)
+			}
+		}
+	}
+
+	{
+		tf, err := NewType(16, 3, 10, -1, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const maxRelError = 0.08
+
+		for x := 0; x <= 1022; x++ {
+			input := 0.1 * math.Pow(3.0, float64(x))
+			result := tf.Decode(tf.Encode(input))
+			if math.Abs((result-input)/input) > maxRelError {
+				t.Fatalf("%.18f != %.18f (x = %d)\n", result, input, x)
+			}
+		}
+	}
+
+	{
+		tf, err := NewType(16, 2, 10, -1, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const maxRelError = 0.08
+
+		for x := 0; x <= 1022; x++ {
+			input := 0.1 * math.Pow(2.0, float64(x))
+			result := tf.Decode(tf.Encode(input))
+			if math.Abs((result-input)/input) > maxRelError {
+				t.Fatalf("%.18f != %.18f (x = %d)\n", result, input, x)
+			}
+		}
+	}
 }
