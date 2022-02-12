@@ -2163,6 +2163,67 @@ func TestReadme(t *testing.T) {
 	}
 }
 
+func TestComparableForms(t *testing.T) {
+	{
+		tf12 := makeTypeX4(12, true, t)
+
+		const input = 1.567
+		const eps = 1e-6
+
+		x := tf12.ToComparable(tf12.Encode(input))
+		if x != 0xC48 {
+			t.Fatalf("Incorrect encoded: 0x%X (12-bit)\n", x)
+		}
+
+		result := tf12.Decode(tf12.FromComparable(x))
+		if math.Abs(result-1.564706) > eps {
+			t.Fatalf("Incorrect decoded: %f (12-bit)\n", result)
+		}
+	}
+
+	{
+		tf12u := makeTypeX4(12, false, t)
+
+		const input = 1.567
+
+		x := tf12u.ToComparable(tf12u.Encode(input))
+		if x != 0x891 {
+			t.Fatalf("Incorrect encoded: 0x%X (12-bit unsigned)\n", x)
+		}
+	}
+
+	{
+		tf12 := makeTypeX4(12, true, t)
+
+		for a := -255; a <= 255; a++ {
+			for b := -255; b <= 255; b++ {
+				ac := tf12.ToComparable(tf12.Encode(float64(a)))
+				bc := tf12.ToComparable(tf12.Encode(float64(b)))
+				uDelta := bc - ac
+
+				if (a > b) != (ac > bc) {
+					t.Fatalf("(a > b) == %t, but (ac > bc) == %t\n",
+						a > b, ac > bc)
+				}
+
+				if ac+uDelta != bc {
+					t.Fatalf("unsigned delta does not work: "+
+						"0x%X + 0x%X != 0x%X\n", ac, uDelta, bc)
+				}
+
+				tfa := tf12.Encode(float64(a))
+				tfb := tf12.Encode(float64(b))
+				signedDelta := tf12.GetIntegerDelta(tfa, tfb)
+
+				if (signedDelta >= 0) && (int(uDelta) != signedDelta) {
+					t.Fatalf("non-negative signed delta %d != %d\n",
+						signedDelta, uDelta)
+				}
+			}
+		}
+	}
+}
+
 func TestExtremeCases(t *testing.T) {
 	{
 		toyfloat13 := makeTypeX4(13, true, t)

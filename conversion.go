@@ -352,12 +352,17 @@ func powerOfTwo(x uint8) float64 {
 }
 
 func get(s []float64, i uint16) float64 {
+	// I am used to immutable structures,
+	// so I added this to prevent panic
+	// when the slice (or the struct) changes unpredictably.
+	// These checks are paranoid:
+	// tests will never cover them.
 	maxIndex := len(s) - 1
 	if maxIndex < 0 {
+		println("unexpectedly empty slice")
 		return 0.0
-	}
-
-	if int(i) > maxIndex {
+	} else if int(i) > maxIndex {
+		println("index out of bound")
 		return s[maxIndex]
 	}
 	return s[i]
