@@ -15,6 +15,7 @@ It has:
   * (-256, +256) for 4-bit exponent
   * (-4, +4) for 3-bit exponent
   * (-3, +3) for 2-bit exponent
+  * up to 10^308 (custom settings).
 
 ![Formula](images/formula.png)
 

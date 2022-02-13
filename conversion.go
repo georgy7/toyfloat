@@ -4,6 +4,7 @@ package toyfloat
 
 import (
 	"errors"
+	"fmt"
 	"math"
 )
 
@@ -40,9 +41,9 @@ func NewTypeX4(length int, signed bool) (Type, error) {
 // So the maximum power equals minX+(2^xSize)-1,
 // and the maximum exponential part equals xBase^(minX+(2^xSize)-1).
 func NewType(length, xBase, xSize uint8, minX int, signed bool) (Type, error) {
-	if (xBase != 2) && (xBase != 3) {
+	if (xBase < 2) || (xBase > 10) {
 		return Type{},
-			errors.New("only base 2 and base 3 exponents are supported rn")
+			errors.New("only bases from 2 to 10 are supported")
 	}
 
 	if minX >= 0 {
@@ -170,6 +171,13 @@ func newSettings(length, xBase, xSize uint8, minX int, signed bool) (Type, error
 
 	settings.scale = make([]float64, int(1)<<xSize)
 	maxX := minX + len(settings.scale) - 1
+
+	maxF64BasePower := math.Log(math.MaxFloat64) / math.Log(float64(xBase))
+	if float64(maxX+1) > maxF64BasePower {
+		msg := fmt.Sprintf("b = %d, max power = %d (+1 for max m); "+
+			"limit for float64: %.0f\n", xBase, maxX, maxF64BasePower)
+		return Type{}, errors.New(msg)
+	}
 
 	{
 		denominator := f64Base

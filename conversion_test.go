@@ -350,6 +350,56 @@ func Test12IgnoringMostSignificantBits(t *testing.T) {
 
 // ------------------------
 
+func Test8Base10Zero(t *testing.T) {
+	tfType, err := NewType(8, 10, 4, -2, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf := tfType.Encode(0)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := tfType.Decode(tf)
+
+	if result != 0 {
+		t.Fatalf("%f != 0", result)
+	}
+}
+
+func Test8Base10PlusOne(t *testing.T) {
+	tfType, err := NewType(8, 10, 4, -2, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf := tfType.Encode(1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := tfType.Decode(tf)
+
+	if result != 1 {
+		t.Fatalf("%f != 1", result)
+	}
+}
+
+func Test8Base10MinusOne(t *testing.T) {
+	tfType, err := NewType(8, 10, 4, -2, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tf := tfType.Encode(-1)
+	t.Logf("Encoded: 0b%b", tf)
+
+	result := tfType.Decode(tf)
+
+	if result != -1 {
+		t.Fatalf("%f != -1", result)
+	}
+}
+
+// ------------------------
+
 // An antidote for dead code elimination. Source:
 // https://stackoverflow.com/a/36975497/1240328
 // https://dave.cheney.net/2013/06/30/how-to-write-benchmarks-in-go
@@ -2374,14 +2424,22 @@ func TestExtremeCases(t *testing.T) {
 	}
 
 	{
-		tf, err := NewType(16, 3, 10, -1, true)
+		_, err := NewType(16, 3, 10, -1, true)
+		if err == nil {
+			t.Fatalf("error expected: 3^(1022+1) > max value of " +
+				"float64, that is used in API\n")
+		}
+	}
+
+	{
+		tf, err := NewType(16, 3, 9, -1, true)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		const maxRelError = 0.08
 
-		for x := 0; x <= 1022; x++ {
+		for x := 0; x <= 510; x++ {
 			input := 0.1 * math.Pow(3.0, float64(x))
 			result := tf.Decode(tf.Encode(input))
 			if math.Abs((result-input)/input) > maxRelError {
@@ -2404,6 +2462,48 @@ func TestExtremeCases(t *testing.T) {
 			if math.Abs((result-input)/input) > maxRelError {
 				t.Fatalf("%.18f != %.18f (x = %d)\n", result, input, x)
 			}
+		}
+	}
+
+	{
+		tf, err := NewType(16, 10, 8, -4, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const maxRelError = 0.001
+
+		for x := 0; x <= 251; x++ {
+			input := 0.1 * math.Pow(10.0, float64(x))
+			result := tf.Decode(tf.Encode(input))
+			if math.Abs((result-input)/input) > maxRelError {
+				t.Fatalf("%E != %E (x = %d)\n", result, input, x)
+			}
+		}
+	}
+
+	{
+		tf, err := NewType(16, 10, 9, -256, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		const maxRelError = 0.001
+
+		for x := 0; x <= 255; x++ {
+			input := 0.1 * math.Pow(10.0, float64(x))
+			result := tf.Decode(tf.Encode(input))
+			if math.Abs((result-input)/input) > maxRelError {
+				t.Fatalf("%E != %E (x = %d)\n", result, input, x)
+			}
+		}
+	}
+
+	{
+		_, err := NewType(16, 10, 9, -203, true)
+		if err == nil {
+			t.Fatalf("error expected: 10^(308+1) > max value of " +
+				"float64, that is used in API\n")
 		}
 	}
 }
