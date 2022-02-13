@@ -51,75 +51,96 @@ import (
 
 func exitOnError(err error) {
 	if err != nil {
-		println("impossible type")
+		fmt.Println("impossible type")
 		os.Exit(1)
 	}
 }
 
-func report(header string, tf uint16, f, v float64) {
-	println(header)
+func printHeader(header string) {
+	fmt.Println(header)
 	for i := 0; i < len(header); i++ {
-		print("-")
+		fmt.Print("-")
 	}
-	println()
+	fmt.Println()
+}
+
+func report(t toyfloat.Type, v float64) {
+	tf := t.Encode(v)
+	f := t.Decode(tf)
+	fmt.Printf("Input:   %f\n", v)
 	fmt.Printf("Encoded: 0x%X\n", tf)
 	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n\n", math.Abs(f-v))
+	fmt.Printf("Delta:   %f\n", math.Abs(f-v))
+	fmt.Printf("RE:      %f\n\n", math.Abs((f-v)/v))
 }
 
 func main() {
-	println()
+	fmt.Println()
 
 	toyfloat12, err12 := toyfloat.NewTypeX4(12, true)
 	toyfloat5x3, err5x3 := toyfloat.NewTypeX3(5, true)
 	toyfloat3x2u, err3x2u := toyfloat.NewTypeX2(3, false)
+	d8x3, errD8x3 := toyfloat.NewType(8, 10, 3, -2, true)
 
 	exitOnError(err12)
 	exitOnError(err5x3)
 	exitOnError(err3x2u)
+	exitOnError(errD8x3)
 
 	const input = 1.567
-	fmt.Printf("Input:   %f\n\n", input)
 
-	tf := toyfloat12.Encode(input)
-	f := toyfloat12.Decode(tf)
-	report("12-bit signed", tf, f, input)
+	printHeader("12-bit signed")
+	report(toyfloat12, input)
 
-	tf = toyfloat5x3.Encode(input)
-	f = toyfloat5x3.Decode(tf)
-	report("5-bit signed with 3-bit exponent", tf, f, input)
+	printHeader("5-bit signed with 3-bit exponent")
+	report(toyfloat5x3, input)
 
-	tf = toyfloat3x2u.Encode(input)
-	f = toyfloat3x2u.Decode(tf)
-	report("3-bit unsigned with 2-bit exponent", tf, f, input)
+	printHeader("3-bit unsigned with 2-bit exponent")
+	report(toyfloat3x2u, input)
 
-	println()
-	println("Delta encoding (12-bit)")
-	println("-----------------------\n")
+	printHeader("8-bit with base 10 exponent (-2..5)")
+	report(d8x3, input/10)
+	report(d8x3, input)
+	report(d8x3, 65536)
+	report(d8x3, -7.5e5)
+	report(d8x3, 1e6)
+
+	fmt.Println()
+	fmt.Println("Delta encoding (12-bit)")
+	fmt.Println("-----------------------")
+	fmt.Println()
 
 	series := []float64{
 		-0.0058, 0.01, -0.0058, 0.01, 0.066, 0.123,
 		0.134, 0.132, 0.144, 0.145, 0.140}
 
 	previous := toyfloat12.Encode(series[0])
+	cPrevious := toyfloat12.ToComparable(previous)
+
 	pDecoded := toyfloat12.Decode(previous)
 
-	fmt.Printf("  Int. delta    Fp delta    Value\n")
-	fmt.Printf("  % 35.6f\n", pDecoded)
+	fmt.Printf("  Int. delta    Unsigned    Fp delta    Value\n")
+	fmt.Printf("  % 47.6f\n", pDecoded)
 
 	for i := 1; i < len(series); i++ {
 		this := toyfloat12.Encode(series[i])
+		cThis := toyfloat12.ToComparable(this)
+
 		delta := toyfloat12.GetIntegerDelta(previous, this)
+		unsignedDelta := cThis - cPrevious
 
 		x := toyfloat12.Decode(this)
 		fpDelta := x - pDecoded
-		fmt.Printf("  %+10d    %+.6f   % .6f\n", delta, fpDelta, x)
+		fmt.Printf("  %+10d    %8d    %+.6f   % .6f\n",
+			delta, unsignedDelta, fpDelta, x)
 
 		previous = this
+		cPrevious = toyfloat12.ToComparable(previous)
+
 		pDecoded = toyfloat12.Decode(previous)
 	}
 
-	println()
+	fmt.Println()
 }
 ```
 
@@ -129,42 +150,78 @@ go run example.go
 ```
 
 ```
-Input:   1.567000
-
 12-bit signed
 -------------
+Input:   1.567000
 Encoded: 0x448
 Decoded: 1.564706
 Delta:   0.002294
+RE:      0.001464
 
 5-bit signed with 3-bit exponent
 --------------------------------
+Input:   1.567000
 Encoded: 0xD
 Decoded: 1.507937
 Delta:   0.059063
+RE:      0.037692
 
 3-bit unsigned with 2-bit exponent
 ----------------------------------
+Input:   1.567000
 Encoded: 0x7
 Decoded: 2.038462
 Delta:   0.471462
+RE:      0.300869
+
+8-bit with base 10 exponent (-2..5)
+-----------------------------------
+Input:   0.156700
+Encoded: 0x11
+Decoded: 0.147727
+Delta:   0.008973
+RE:      0.057261
+
+Input:   1.567000
+Encoded: 0x21
+Decoded: 1.568182
+Delta:   0.001182
+RE:      0.000754
+
+Input:   65536.000000
+Encoded: 0x6A
+Decoded: 66919.181818
+Delta:   1383.181818
+RE:      0.021106
+
+Input:   -750000.000000
+Encoded: 0xFB
+Decoded: -726010.090909
+Delta:   23989.909091
+RE:      0.031987
+
+Input:   1000000.000000
+Encoded: 0x7F
+Decoded: 953282.818182
+Delta:   46717.181818
+RE:      0.046717
 
 
 Delta encoding (12-bit)
 -----------------------
 
-  Int. delta    Fp delta    Value
-                            -0.005821
-        +387    +0.015809    0.009988
-        -387    -0.015809   -0.005821
-        +387    +0.015809    0.009988
-        +300    +0.056189    0.066176
-        +114    +0.056373    0.122549
-         +12    +0.011765    0.134314
-          -2    -0.001961    0.132353
-         +12    +0.011765    0.144118
-          +1    +0.000980    0.145098
-          -5    -0.004902    0.140196
+  Int. delta    Unsigned    Fp delta    Value
+                                        -0.005821
+        +387         387    +0.015809    0.009988
+        -387       65149    -0.015809   -0.005821
+        +387         387    +0.015809    0.009988
+        +300         300    +0.056189    0.066176
+        +114         114    +0.056373    0.122549
+         +12          12    +0.011765    0.134314
+          -2       65534    -0.001961    0.132353
+         +12          12    +0.011765    0.144118
+          +1           1    +0.000980    0.145098
+          -5       65531    -0.004902    0.140196
 ```
 
 ## Performance
