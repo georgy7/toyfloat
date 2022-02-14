@@ -22,14 +22,16 @@ func printHeader(header string) {
 	fmt.Println()
 }
 
-func report(t toyfloat.Type, v float64) {
-	tf := t.Encode(v)
-	f := t.Decode(tf)
-	fmt.Printf("Input:   %f\n", v)
-	fmt.Printf("Encoded: 0x%X\n", tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n", math.Abs(f-v))
-	fmt.Printf("RE:      %f\n\n", math.Abs((f-v)/v))
+func report(t toyfloat.Type, value float64) {
+	encoded := t.Encode(value)
+	comparable := t.ToComparable(encoded)
+	decoded := t.Decode(encoded)
+	fmt.Printf("Input:      %f\n", value)
+	fmt.Printf("Encoded:    0x%X\n", encoded)
+	fmt.Printf("Comparable: 0x%X\n", comparable)
+	fmt.Printf("Decoded:    %f\n", decoded)
+	fmt.Printf("Error:      %f\n", math.Abs(value-decoded))
+	fmt.Printf("Relative:   %f\n\n", math.Abs((value-decoded)/value))
 }
 
 func main() {

@@ -64,14 +64,16 @@ func printHeader(header string) {
 	fmt.Println()
 }
 
-func report(t toyfloat.Type, v float64) {
-	tf := t.Encode(v)
-	f := t.Decode(tf)
-	fmt.Printf("Input:   %f\n", v)
-	fmt.Printf("Encoded: 0x%X\n", tf)
-	fmt.Printf("Decoded: %f\n", f)
-	fmt.Printf("Delta:   %f\n", math.Abs(f-v))
-	fmt.Printf("RE:      %f\n\n", math.Abs((f-v)/v))
+func report(t toyfloat.Type, value float64) {
+	encoded := t.Encode(value)
+	comparable := t.ToComparable(encoded)
+	decoded := t.Decode(encoded)
+	fmt.Printf("Input:      %f\n", value)
+	fmt.Printf("Encoded:    0x%X\n", encoded)
+	fmt.Printf("Comparable: 0x%X\n", comparable)
+	fmt.Printf("Decoded:    %f\n", decoded)
+	fmt.Printf("Error:      %f\n", math.Abs(value-decoded))
+	fmt.Printf("Relative:   %f\n\n", math.Abs((value-decoded)/value))
 }
 
 func main() {
@@ -152,59 +154,67 @@ go run example.go
 ```
 12-bit signed
 -------------
-Input:   1.567000
-Encoded: 0x448
-Decoded: 1.564706
-Delta:   0.002294
-RE:      0.001464
+Input:      1.567000
+Encoded:    0x448
+Comparable: 0xC48
+Decoded:    1.564706
+Error:      0.002294
+Relative:   0.001464
 
 5-bit signed with 3-bit exponent
 --------------------------------
-Input:   1.567000
-Encoded: 0xD
-Decoded: 1.507937
-Delta:   0.059063
-RE:      0.037692
+Input:      1.567000
+Encoded:    0xD
+Comparable: 0x1D
+Decoded:    1.507937
+Error:      0.059063
+Relative:   0.037692
 
 3-bit unsigned with 2-bit exponent
 ----------------------------------
-Input:   1.567000
-Encoded: 0x7
-Decoded: 2.038462
-Delta:   0.471462
-RE:      0.300869
+Input:      1.567000
+Encoded:    0x7
+Comparable: 0x7
+Decoded:    2.038462
+Error:      0.471462
+Relative:   0.300869
 
 8-bit with base 10 exponent (-2..5)
 -----------------------------------
-Input:   0.156700
-Encoded: 0x11
-Decoded: 0.147727
-Delta:   0.008973
-RE:      0.057261
+Input:      0.156700
+Encoded:    0x11
+Comparable: 0x91
+Decoded:    0.147727
+Error:      0.008973
+Relative:   0.057261
 
-Input:   1.567000
-Encoded: 0x21
-Decoded: 1.568182
-Delta:   0.001182
-RE:      0.000754
+Input:      1.567000
+Encoded:    0x21
+Comparable: 0xA1
+Decoded:    1.568182
+Error:      0.001182
+Relative:   0.000754
 
-Input:   65536.000000
-Encoded: 0x6A
-Decoded: 66919.181818
-Delta:   1383.181818
-RE:      0.021106
+Input:      65536.000000
+Encoded:    0x6A
+Comparable: 0xEA
+Decoded:    66919.181818
+Error:      1383.181818
+Relative:   0.021106
 
-Input:   -750000.000000
-Encoded: 0xFB
-Decoded: -726010.090909
-Delta:   23989.909091
-RE:      0.031987
+Input:      -750000.000000
+Encoded:    0xFB
+Comparable: 0x4
+Decoded:    -726010.090909
+Error:      23989.909091
+Relative:   0.031987
 
-Input:   1000000.000000
-Encoded: 0x7F
-Decoded: 953282.818182
-Delta:   46717.181818
-RE:      0.046717
+Input:      1000000.000000
+Encoded:    0x7F
+Comparable: 0xFF
+Decoded:    953282.818182
+Error:      46717.181818
+Relative:   0.046717
 
 
 Delta encoding (12-bit)
